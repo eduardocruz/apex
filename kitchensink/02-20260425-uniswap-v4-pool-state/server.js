@@ -66,10 +66,16 @@ const STATE_VIEW_ABI = [
   },
 ];
 
-// viem's default mainnet RPC has been timing out on eth_call against StateView.
-// llamarpc is a free public alternative that's been more reliable for this kit.
-// Override via ETH_RPC_URL env if you have your own (Alchemy/Infura/drpc).
-const RPC_URL = process.env.ETH_RPC_URL || 'https://eth.llamarpc.com';
+// Public RPC selection notes (tested 2026-04-25):
+//   - viem default (cloudflare-eth): "Internal error" on eth_call to StateView.
+//   - https://eth.llamarpc.com:      returns all-zero responses silently
+//                                    (no error, looks like uninitialized pool — bad).
+//   - https://rpc.ankr.com/eth:      requires an API key now (401).
+//   - https://eth.drpc.org:          works for these queries. Default.
+//   - https://1rpc.io/eth:           works.
+//   - https://eth-pokt.nodies.app:   works.
+// Override via ETH_RPC_URL env (Alchemy/Infura/drpc with key recommended for production).
+const RPC_URL = process.env.ETH_RPC_URL || 'https://eth.drpc.org';
 
 const client = createPublicClient({
   chain: mainnet,

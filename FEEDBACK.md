@@ -35,7 +35,9 @@ short, specific, reproducible.
 
 ## Bugs
 
-_(Reproducible issues. Include exact command/UI step + actual vs expected.)_
+_(Bugs found in Uniswap-published artifacts only — not in third-party
+infra. Public RPC issues are noted in the v4 pool-state kitchensink's
+own README, since they aren't a Uniswap-side problem.)_
 
 ## Documentation gaps
 

@@ -85,6 +85,14 @@
     font-size: 13px;
   }
   input:focus { outline: 1px solid var(--accent); }
+  .hint {
+    color: var(--good);
+    font-size: 11px;
+    font-family: var(--mono);
+    margin-top: 4px;
+    min-height: 16px;
+    letter-spacing: 0.04em;
+  }
   .row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -170,7 +178,7 @@
 <div class="wrap">
   <h1>Uniswap v4 — Pool State</h1>
   <div class="sub">
-    kitchensink/03 — read pool state directly from the v4 StateView contract on Ethereum mainnet.
+    kitchensink/02 — read pool state directly from the v4 StateView contract on Ethereum mainnet.
   </div>
 
   <form id="f" class="card">
@@ -185,6 +193,7 @@
       <div>
         <label for="t0addr">Token0 address</label>
         <input id="t0addr" required>
+        <div class="hint" id="t0hint"></div>
       </div>
     </div>
     <div class="row">
@@ -201,6 +210,7 @@
       <div>
         <label for="t1addr">Token1 address</label>
         <input id="t1addr" required>
+        <div class="hint" id="t1hint"></div>
       </div>
       <div>
         <label for="t1dec">Token1 decimals</label>
@@ -268,6 +278,15 @@ const PRESETS = [
 const $ = (id) => document.getElementById(id);
 const presetsEl = $('presets');
 
+const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
+
+function updateHints() {
+  const t0 = $('t0addr').value.trim().toLowerCase();
+  const t1 = $('t1addr').value.trim().toLowerCase();
+  $('t0hint').textContent = t0 === ZERO_ADDR ? '↑ native ETH (v4 uses 0x0…0 for native)' : '';
+  $('t1hint').textContent = t1 === ZERO_ADDR ? '↑ native ETH (v4 uses 0x0…0 for native)' : '';
+}
+
 function applyPreset(p) {
   $('t0sym').value = p.t0.sym;
   $('t0addr').value = p.t0.addr;
@@ -277,9 +296,12 @@ function applyPreset(p) {
   $('t1dec').value = p.t1.dec;
   $('fee').value = p.fee;
   $('ts').value = p.ts;
+  updateHints();
   for (const b of presetsEl.querySelectorAll('.preset')) b.classList.remove('active');
   presetsEl.querySelector(`[data-name="${p.name}"]`)?.classList.add('active');
 }
+
+document.addEventListener('input', updateHints);
 
 for (const p of PRESETS) {
   const b = document.createElement('button');

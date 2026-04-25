@@ -1,16 +1,16 @@
-# 03 — Uniswap v4 pool state
+# 02 — Uniswap v4 pool state
 
 **Date:** 2026-04-25
-**Goal:** Show the third Uniswap skill (`v4-sdk-integration`) doing
-something concrete: read a Uniswap v4 pool's state directly from the
-StateView contract on Ethereum mainnet, and display price, tick,
-liquidity, fee tier, and protocol/lp fees.
+**Goal:** Show the `v4-sdk-integration` skill doing something concrete:
+read a Uniswap v4 pool's state directly from the StateView contract on
+Ethereum mainnet, and display price, tick, liquidity, fee tier, and
+protocol/lp fees.
 
-**Why this matters:** kitchensink/01 and /02 used the Trading API — a
-hosted abstraction. This one talks to the chain itself, exercising the
-v4 SDK and viem's read paths. It's the foundation for any project that
-needs to *observe* pool state (LP dashboards, monitoring agents, hook
-testing, price oracles) rather than route a trade through the API.
+**Why this matters:** kitchensink/01 used the Trading API — a hosted
+abstraction. This one talks to the chain itself, exercising viem's
+read paths against v4 contracts. It's the foundation for any project
+that needs to *observe* pool state (LP dashboards, monitoring agents,
+hook testing, price oracles) rather than route a trade through the API.
 
 ## What's in here
 
@@ -41,14 +41,21 @@ package.json    One dep: viem.
 ## Run it
 
 ```bash
-cd kitchensink/03-20260425-uniswap-v4-pool-state
+cd kitchensink/02-20260425-uniswap-v4-pool-state
 npm install                       # one dep: viem
 npm start                         # then open http://localhost:3000
 ```
 
-`.env` is optional — without it, the server uses
-`https://eth.llamarpc.com`. If you hit rate limits, copy `.env.example`
+`.env` is optional — without it, the server uses `https://eth.drpc.org`
+(reliable free public RPC). If you hit rate limits, copy `.env.example`
 to `.env` and add a key from Alchemy/Infura/drpc.
+
+**RPC gotcha worth knowing:** while building this we initially used
+`https://eth.llamarpc.com` and saw every preset come back as
+"uninitialized." It wasn't — llamarpc was returning all-zero responses
+silently (no error, just zeros) under load. Switching to drpc fixed it
+instantly. Public RPCs are best-effort; for any read that affects
+business logic, route through a paid endpoint with health checks.
 
 ## What it shows
 
@@ -76,39 +83,43 @@ If a preset returns "uninitialized", it just means nobody has used that
 specific pool config yet — the StateView still answers cleanly with
 zeros. Swap presets to find one that is initialized.
 
-## Differences vs kitchensink/02
+## Differences vs kitchensink/01
 
-| /02 (Trading API) | /03 (v4 SDK + StateView)               |
+| /01 (Trading API) | /02 (v4 SDK + StateView)               |
 | ----------------- | -------------------------------------- |
 | `POST /quote`     | direct contract read (`getSlot0`, `getLiquidity`) |
 | Hosted abstraction | Onchain primary source                |
 | Price + route + gas | Price + liquidity + tick + fees      |
 | Returns "what swap would cost" | Returns "what the pool *is*" |
 | One API key       | Public RPC (rate-limited)             |
-| No SDK install    | Three npm packages                    |
+| Zero npm deps     | One npm dep (viem)                    |
 
-Both are valid integration paths. /02 is right when you want a swap
-quote. /03 is right when you want to observe pool state.
+Both are valid integration paths. /01 is right when you want a swap
+quote. /02 is right when you want to observe pool state.
 
 ## Strict v4 conventions enforced
 
 - `currency0 < currency1` by address — preset presets observe this
   (ETH `0x000…000` always sorts before any ERC20).
-- `Pool.getPoolId()` from the SDK to compute the keccak256 — never
-  built by hand.
-- `Ether.onChain(1)` for native ETH, never WETH (v4 supports native).
+- PoolId computed via `keccak256(abi.encode(PoolKey))` — matches what
+  `Pool.getPoolId()` from the SDK would produce, byte-for-byte. See
+  the SDK detour note above for why we don't use the SDK directly.
+- Native ETH represented by zero address (v4 supports native, no WETH
+  wrap needed). The form shows a hint when the address resolves to
+  `0x0…0`.
 - Hooks default to `0x000…000` (no hook). Pools with hooks are
   different pool IDs.
 
 ## Decision impact
 
-`v4-sdk-integration` skill: covered. Together with /01 (curl) and /02
-(UI), the full Trading-API-vs-SDK contrast is now demonstrable. The
-Uniswap track of the hackathon is reachable and we've exercised the
-3 skills the plugin ships:
-- ✅ `swap-integration` — Trading API quote (UI)
-- ✅ `v4-sdk-integration` — direct chain read (UI)
-- ⏳ `pay-with-any-token` — depends on Tempo CLI infra (see _drafts/)
+`v4-sdk-integration` skill: covered. Together with /01 (Trading API
+quote UI), the full Trading-API-vs-SDK contrast is now demonstrable.
+The Uniswap track of the hackathon is reachable. Status of the 3
+skills the plugin ships:
+
+- ✅ `swap-integration` — Trading API quote UI (kitchensink/01)
+- ✅ `v4-sdk-integration` — direct chain read UI (this folder)
+- ⏳ `pay-with-any-token` — depends on Tempo CLI infra (see `_drafts/`)
 
 ## Feedback
 
