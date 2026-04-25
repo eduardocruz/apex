@@ -20,3 +20,6 @@ Updated as work happens, not retroactively.
 | 2026-04-25 | `CLAUDE.md` | generated | Claude Code (Opus 4.7) | Initial repo policy doc |
 | 2026-04-25 | `AI-USAGE.md` | generated | Claude Code (Opus 4.7) | This file |
 | 2026-04-25 | `README.md` | generated | Claude Code (Opus 4.7) | Initial scaffold |
+| 2026-04-25 | `FEEDBACK.md` | generated | Claude Code (Opus 4.7) | Uniswap prize submission feedback file |
+| 2026-04-25 | `kitchensink/01-20260425-uniswap-swap-quote/README.md` | generated | Claude Code (Opus 4.7) | Hello-world Uniswap Trading API quote — drafted by Claude Code from skill output and live curl response. Eduardo ran the curl. |
+| 2026-04-25 | `kitchensink/01-20260425-uniswap-swap-quote/.env.example` | generated | Claude Code (Opus 4.7) | Env file template |
