@@ -11,8 +11,10 @@ short, specific, reproducible.
 
 | Tool                                                | Version  | Used where                                |
 |-----------------------------------------------------|----------|-------------------------------------------|
-| `uniswap-trading` Claude Code plugin                | 1.8.0    | kitchensink/02 (`swap-integration` skill) |
-| Trading API                                         | v1       | kitchensink/02 (POST `/quote`)            |
+| `uniswap-trading` Claude Code plugin                | 1.8.0    | kitchensink/01 (`swap-integration` skill), kitchensink/02 (`v4-sdk-integration` skill) |
+| Trading API                                         | v1       | kitchensink/01 (POST `/quote`)            |
+| Uniswap v4 StateView contract                       | mainnet  | kitchensink/02 (getSlot0, getLiquidity)   |
+| `viem`                                              | ^2.21.0  | kitchensink/02 (RPC reads, ABI encoding, keccak256) |
 | Universal Router contract addresses (reference)     | v2       | (read only — not yet executed)            |
 
 ## What worked well
@@ -80,7 +82,7 @@ _(Reproducible issues. Include exact command/UI step + actual vs expected.)_
   `./entities` (a directory) without resolving to `./entities/index.js`.
   This blocks the `v4-sdk-integration` skill's recommended path on any
   modern Node project that opted into `"type": "module"`. The fix in our
-  kitchensink/03 was to drop the SDK and compute `poolId` manually with
+  kitchensink/02 was to drop the SDK and compute `poolId` manually with
   viem (`encodeAbiParameters` + `keccak256`) — works, but means the
   skill's "ALWAYS use Pool.getPoolId()" rule is unenforceable without
   switching the host project to CommonJS or adding a transpiler. Either
