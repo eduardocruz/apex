@@ -1,0 +1,15 @@
+{
+  "name": "uniswap-v4-pool-state",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "viem": "^2.21.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

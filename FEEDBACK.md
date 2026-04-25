@@ -75,6 +75,17 @@ _(Reproducible issues. Include exact command/UI step + actual vs expected.)_
   recommended defaults, the skill should mention them. If they're
   optional knobs, the portal example shouldn't include them in the
   hello-world curl since they confuse "what's required vs what's tuning".
+- **`@uniswap/v4-sdk@1.10.0` fails to load under Node strict ESM** with
+  `ERR_UNSUPPORTED_DIR_IMPORT` because internal modules import
+  `./entities` (a directory) without resolving to `./entities/index.js`.
+  This blocks the `v4-sdk-integration` skill's recommended path on any
+  modern Node project that opted into `"type": "module"`. The fix in our
+  kitchensink/03 was to drop the SDK and compute `poolId` manually with
+  viem (`encodeAbiParameters` + `keccak256`) — works, but means the
+  skill's "ALWAYS use Pool.getPoolId()" rule is unenforceable without
+  switching the host project to CommonJS or adding a transpiler. Either
+  fix the package's import paths to be ESM-strict-compatible, or
+  document the workaround in the skill itself.
 
 ## Feature requests
 

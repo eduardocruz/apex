@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Uniswap v4 Pool State — kitchensink/03</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root {
+    --bg: #0d0d10;
+    --panel: #16161b;
+    --line: #2a2a33;
+    --text: #e8e8ee;
+    --muted: #8a8a96;
+    --accent: #ff007a;
+    --good: #4ade80;
+    --warn: #fbbf24;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, sans-serif;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 24px;
+  }
+  .wrap { width: 100%; max-width: 760px; }
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .preset-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .preset {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .preset:hover { border-color: var(--muted); }
+  .preset.active { border-color: var(--accent); color: var(--accent); }
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  input {
+    width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font: inherit;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  input:focus { outline: 1px solid var(--accent); }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .row3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  button[type=submit] {
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: 0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  button[type=submit]:disabled { opacity: 0.5; cursor: progress; }
+  .result {
+    display: none;
+  }
+  .result.show { display: block; }
+  .price {
+    font-size: 28px;
+    font-weight: 600;
+    font-family: var(--mono);
+    letter-spacing: -0.02em;
+    margin: 0 0 4px;
+  }
+  .price .out { color: var(--good); }
+  .meta {
+    color: var(--muted);
+    font-size: 13px;
+    font-family: var(--mono);
+    line-height: 1.8;
+  }
+  .meta .k { color: var(--muted); display: inline-block; min-width: 110px; }
+  .meta .v { color: var(--text); }
+  details {
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+    margin-top: 14px;
+  }
+  details summary {
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  pre {
+    margin: 12px 0 0;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    overflow: auto;
+    max-height: 360px;
+  }
+  .err {
+    color: var(--warn);
+    font-family: var(--mono);
+    font-size: 13px;
+    white-space: pre-wrap;
+  }
+  .uninit {
+    color: var(--warn);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 8px 0;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Uniswap v4 — Pool State</h1>
+  <div class="sub">
+    kitchensink/03 — read pool state directly from the v4 StateView contract on Ethereum mainnet.
+  </div>
+
+  <form id="f" class="card">
+    <label>Preset</label>
+    <div class="preset-row" id="presets"></div>
+
+    <div class="row">
+      <div>
+        <label for="t0sym">Token0 symbol</label>
+        <input id="t0sym" required>
+      </div>
+      <div>
+        <label for="t0addr">Token0 address</label>
+        <input id="t0addr" required>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="t0dec">Token0 decimals</label>
+        <input id="t0dec" type="number" required>
+      </div>
+      <div>
+        <label for="t1sym">Token1 symbol</label>
+        <input id="t1sym" required>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="t1addr">Token1 address</label>
+        <input id="t1addr" required>
+      </div>
+      <div>
+        <label for="t1dec">Token1 decimals</label>
+        <input id="t1dec" type="number" required>
+      </div>
+    </div>
+    <div class="row3">
+      <div>
+        <label for="fee">Fee (bps)</label>
+        <input id="fee" type="number" required>
+      </div>
+      <div>
+        <label for="ts">Tick spacing</label>
+        <input id="ts" type="number" required>
+      </div>
+      <div>
+        <label for="hooks">Hooks address</label>
+        <input id="hooks" value="0x0000000000000000000000000000000000000000">
+      </div>
+    </div>
+    <button type="submit" id="go">Read pool</button>
+  </form>
+
+  <div id="out" class="card result">
+    <div class="price"><span id="priceLine"></span></div>
+    <div class="meta" id="metaBlock"></div>
+    <details>
+      <summary>Raw response</summary>
+      <pre id="raw"></pre>
+    </details>
+  </div>
+</div>
+
+<script>
+// Sorted by address ascending — currency0 < currency1 is required by v4.
+// ETH (0x000...) sorts first against every ERC20.
+const PRESETS = [
+  {
+    name: 'ETH / USDC — 0.05%',
+    t0: { sym: 'ETH',  addr: '0x0000000000000000000000000000000000000000', dec: 18 },
+    t1: { sym: 'USDC', addr: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', dec: 6  },
+    fee: 500, ts: 10,
+  },
+  {
+    name: 'ETH / USDC — 0.30%',
+    t0: { sym: 'ETH',  addr: '0x0000000000000000000000000000000000000000', dec: 18 },
+    t1: { sym: 'USDC', addr: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', dec: 6  },
+    fee: 3000, ts: 60,
+  },
+  {
+    name: 'ETH / USDT — 0.05%',
+    t0: { sym: 'ETH',  addr: '0x0000000000000000000000000000000000000000', dec: 18 },
+    t1: { sym: 'USDT', addr: '0xdAC17F958D2ee523a2206206994597C13D831ec7', dec: 6  },
+    fee: 500, ts: 10,
+  },
+  {
+    name: 'USDC / USDT — 0.01%',
+    // USDC < USDT lexicographically
+    t0: { sym: 'USDC', addr: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', dec: 6 },
+    t1: { sym: 'USDT', addr: '0xdAC17F958D2ee523a2206206994597C13D831ec7', dec: 6 },
+    fee: 100, ts: 1,
+  },
+];
+
+const $ = (id) => document.getElementById(id);
+const presetsEl = $('presets');
+
+function applyPreset(p) {
+  $('t0sym').value = p.t0.sym;
+  $('t0addr').value = p.t0.addr;
+  $('t0dec').value = p.t0.dec;
+  $('t1sym').value = p.t1.sym;
+  $('t1addr').value = p.t1.addr;
+  $('t1dec').value = p.t1.dec;
+  $('fee').value = p.fee;
+  $('ts').value = p.ts;
+  for (const b of presetsEl.querySelectorAll('.preset')) b.classList.remove('active');
+  presetsEl.querySelector(`[data-name="${p.name}"]`)?.classList.add('active');
+}
+
+for (const p of PRESETS) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'preset';
+  b.dataset.name = p.name;
+  b.textContent = p.name;
+  b.addEventListener('click', () => applyPreset(p));
+  presetsEl.appendChild(b);
+}
+applyPreset(PRESETS[0]);
+
+function fmt(n, max = 4) {
+  if (n == null) return '—';
+  if (n >= 1) return n.toLocaleString(undefined, { maximumFractionDigits: max });
+  return n.toLocaleString(undefined, { maximumSignificantDigits: max });
+}
+
+function fmtBig(s) {
+  // group thousands without losing precision
+  const n = String(s);
+  const parts = [];
+  for (let i = n.length; i > 0; i -= 3) parts.unshift(n.slice(Math.max(0, i - 3), i));
+  return parts.join(',');
+}
+
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payload = {
+    token0: { address: $('t0addr').value.trim(), decimals: Number($('t0dec').value), symbol: $('t0sym').value.trim() },
+    token1: { address: $('t1addr').value.trim(), decimals: Number($('t1dec').value), symbol: $('t1sym').value.trim() },
+    fee: Number($('fee').value),
+    tickSpacing: Number($('ts').value),
+    hooks: $('hooks').value.trim() || '0x0000000000000000000000000000000000000000',
+  };
+
+  const btn = $('go');
+  btn.disabled = true; btn.textContent = 'Reading…';
+  const out = $('out');
+  out.classList.remove('show');
+
+  try {
+    const res = await fetch('/api/pool', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+    if (!data.initialized) {
+      $('priceLine').innerHTML = '<span class="uninit">Pool exists in PoolManager but is uninitialized (sqrtPriceX96 == 0).<br>This pool config has not been used yet on this chain.</span>';
+      $('metaBlock').innerHTML = `<span class="k">poolId:</span> <span class="v">${data.poolId}</span>`;
+    } else {
+      const sym0 = payload.token0.symbol;
+      const sym1 = payload.token1.symbol;
+      $('priceLine').innerHTML =
+        `1 ${sym0} = <span class="out">${fmt(data.humanPrice)} ${sym1}</span>` +
+        `<br><span style="font-size:14px;color:var(--muted)">1 ${sym1} = ${fmt(data.invertedPrice, 8)} ${sym0}</span>`;
+
+      const feePct = (payload.fee / 10000).toFixed(4) + '%';
+      $('metaBlock').innerHTML = [
+        `<span class="k">fee:</span> <span class="v">${feePct} (${payload.fee} bps)</span>`,
+        `<span class="k">tick:</span> <span class="v">${data.tick}</span>`,
+        `<span class="k">tick spacing:</span> <span class="v">${payload.tickSpacing}</span>`,
+        `<span class="k">liquidity:</span> <span class="v">${fmtBig(data.liquidity)}</span>`,
+        `<span class="k">protocolFee:</span> <span class="v">${data.protocolFee}</span>`,
+        `<span class="k">lpFee:</span> <span class="v">${data.lpFee}</span>`,
+        `<span class="k">poolId:</span> <span class="v">${data.poolId}</span>`,
+      ].join('<br>');
+    }
+
+    $('raw').textContent = JSON.stringify(data, null, 2);
+    out.classList.add('show');
+  } catch (err) {
+    $('priceLine').innerHTML = `<span class="err">${err.message}</span>`;
+    $('metaBlock').textContent = '';
+    $('raw').textContent = err.stack || err.message || '';
+    out.classList.add('show');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Read pool';
+  }
+});
+</script>
+</body>
+</html>
