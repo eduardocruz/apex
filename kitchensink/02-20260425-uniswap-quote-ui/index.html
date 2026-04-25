@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Uniswap Quote — kitchensink/02</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root {
+    --bg: #0d0d10;
+    --panel: #16161b;
+    --line: #2a2a33;
+    --text: #e8e8ee;
+    --muted: #8a8a96;
+    --accent: #ff007a;
+    --good: #4ade80;
+    --warn: #fbbf24;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, sans-serif;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 24px;
+  }
+  .wrap { width: 100%; max-width: 720px; }
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 32px;
+  }
+  .sub a { color: var(--muted); text-decoration: underline; text-decoration-color: var(--line); }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  select, input {
+    width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font: inherit;
+    font-family: var(--mono);
+  }
+  select:focus, input:focus { outline: 1px solid var(--accent); }
+  button {
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: 0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  button:disabled { opacity: 0.5; cursor: progress; }
+  .result {
+    display: none;
+  }
+  .result.show { display: block; }
+  .price {
+    font-size: 28px;
+    font-weight: 600;
+    font-family: var(--mono);
+    letter-spacing: -0.02em;
+    margin: 0 0 4px;
+  }
+  .price .out { color: var(--good); }
+  .meta {
+    color: var(--muted);
+    font-size: 13px;
+    font-family: var(--mono);
+    margin-bottom: 16px;
+  }
+  .meta span { margin-right: 16px; }
+  details {
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+    margin-top: 14px;
+  }
+  details summary {
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  pre {
+    margin: 12px 0 0;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    overflow: auto;
+    max-height: 320px;
+  }
+  .err {
+    color: var(--warn);
+    font-family: var(--mono);
+    font-size: 13px;
+    white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Uniswap Quote</h1>
+  <div class="sub">
+    kitchensink/02 — POST /quote via Trading API.
+    <a href="https://developers.uniswap.org/" target="_blank" rel="noopener">developers.uniswap.org</a>
+  </div>
+
+  <form id="f" class="card">
+    <div class="row">
+      <div>
+        <label for="tokenIn">From</label>
+        <select id="tokenIn"></select>
+      </div>
+      <div>
+        <label for="tokenOut">To</label>
+        <select id="tokenOut"></select>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="amount">Amount</label>
+        <input id="amount" type="text" inputmode="decimal" value="1">
+      </div>
+      <div>
+        <label for="chain">Chain</label>
+        <select id="chain">
+          <option value="1" selected>Ethereum (1)</option>
+          <option value="8453">Base (8453)</option>
+          <option value="42161">Arbitrum (42161)</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit" id="go">Get quote</button>
+  </form>
+
+  <div id="out" class="card result">
+    <div class="price"><span id="inDisp"></span> = <span id="outDisp" class="out"></span></div>
+    <div class="meta">
+      <span>routing: <b id="routing"></b></span>
+      <span>gas: <b id="gas"></b></span>
+      <span>hops: <b id="hops"></b></span>
+    </div>
+    <details>
+      <summary>Raw response</summary>
+      <pre id="raw"></pre>
+    </details>
+  </div>
+</div>
+
+<script>
+// Tokens by chain. Ethereum first; Base + Arbitrum subset.
+const TOKENS = {
+  '1': [
+    { sym: 'ETH',  addr: '0x0000000000000000000000000000000000000000', dec: 18 },
+    { sym: 'WETH', addr: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', dec: 18 },
+    { sym: 'USDC', addr: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', dec: 6  },
+    { sym: 'USDT', addr: '0xdAC17F958D2ee523a2206206994597C13D831ec7', dec: 6  },
+    { sym: 'DAI',  addr: '0x6B175474E89094C44Da98b954EedeAC495271d0F', dec: 18 },
+    { sym: 'WBTC', addr: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', dec: 8  },
+  ],
+  '8453': [
+    { sym: 'ETH',  addr: '0x0000000000000000000000000000000000000000', dec: 18 },
+    { sym: 'WETH', addr: '0x4200000000000000000000000000000000000006', dec: 18 },
+    { sym: 'USDC', addr: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', dec: 6  },
+  ],
+  '42161': [
+    { sym: 'ETH',  addr: '0x0000000000000000000000000000000000000000', dec: 18 },
+    { sym: 'WETH', addr: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', dec: 18 },
+    { sym: 'USDC', addr: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', dec: 6  },
+    { sym: 'USDT', addr: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', dec: 6  },
+  ],
+};
+
+const $ = (id) => document.getElementById(id);
+const tokenInSel = $('tokenIn');
+const tokenOutSel = $('tokenOut');
+const chainSel = $('chain');
+
+function rebuildTokens(initial = false) {
+  const tokens = TOKENS[chainSel.value] || [];
+  for (const sel of [tokenInSel, tokenOutSel]) {
+    sel.innerHTML = '';
+    for (const t of tokens) {
+      const o = document.createElement('option');
+      o.value = JSON.stringify(t);
+      o.textContent = t.sym;
+      sel.appendChild(o);
+    }
+  }
+  if (initial) {
+    tokenInSel.value = JSON.stringify(tokens[0]);
+    tokenOutSel.value = JSON.stringify(tokens.find(t => t.sym === 'USDC') || tokens[1]);
+  }
+}
+rebuildTokens(true);
+chainSel.addEventListener('change', () => rebuildTokens(true));
+
+function fmt(n, dec) {
+  const v = Number(BigInt(n)) / 10 ** dec;
+  if (v >= 1) return v.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  return v.toLocaleString(undefined, { maximumSignificantDigits: 4 });
+}
+
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const inT = JSON.parse(tokenInSel.value);
+  const outT = JSON.parse(tokenOutSel.value);
+  const chainId = chainSel.value;
+  const amount = $('amount').value.trim();
+  if (!amount || isNaN(Number(amount))) { alert('Invalid amount'); return; }
+
+  // amount * 10^decimals as integer string
+  const [whole, frac = ''] = amount.split('.');
+  const padded = (frac + '0'.repeat(inT.dec)).slice(0, inT.dec);
+  const wei = (BigInt(whole || '0') * 10n ** BigInt(inT.dec) + BigInt(padded || '0')).toString();
+
+  const btn = $('go');
+  btn.disabled = true; btn.textContent = 'Loading…';
+  const out = $('out');
+  out.classList.remove('show');
+
+  try {
+    const res = await fetch('/api/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        swapper: '0x0000000000000000000000000000000000000000',
+        tokenIn: inT.addr,
+        tokenOut: outT.addr,
+        tokenInChainId: String(chainId),
+        tokenOutChainId: String(chainId),
+        amount: wei,
+        type: 'EXACT_INPUT',
+        slippageTolerance: 0.5,
+        routingPreference: 'BEST_PRICE',
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || data.message || `HTTP ${res.status}`);
+
+    const isUniswapX = ['DUTCH_V2', 'DUTCH_V3', 'PRIORITY'].includes(data.routing);
+    const outAmt = isUniswapX
+      ? data.quote.orderInfo.outputs[0].startAmount
+      : data.quote.output.amount;
+    const route = isUniswapX
+      ? (data.quote.orderInfo.outputs[0]?.token === outT.addr ? 'UniswapX' : 'UniswapX')
+      : data.quote.route?.[0]?.length || 1;
+
+    $('inDisp').textContent = `${amount} ${inT.sym}`;
+    $('outDisp').textContent = `${fmt(outAmt, outT.dec)} ${outT.sym}`;
+    $('routing').textContent = data.routing;
+    $('gas').textContent = isUniswapX ? 'gasless' : `$${Number(data.quote.gasFeeUSD || 0).toFixed(4)}`;
+    $('hops').textContent = isUniswapX ? '—' : (data.quote.route?.[0]?.length || 1);
+    $('raw').textContent = JSON.stringify(data, null, 2);
+    out.classList.add('show');
+  } catch (err) {
+    $('inDisp').textContent = '';
+    $('outDisp').innerHTML = `<span class="err">${err.message}</span>`;
+    $('routing').textContent = '—';
+    $('gas').textContent = '—';
+    $('hops').textContent = '—';
+    $('raw').textContent = err.stack || '';
+    out.classList.add('show');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Get quote';
+  }
+});
+</script>
+</body>
+</html>
