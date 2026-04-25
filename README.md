@@ -10,12 +10,15 @@ See `AI-USAGE.md` for the audit log and `CLAUDE.md` for the attribution rule.
 A two-phase build:
 
 **Phase 1 — kitchensink.**
-Sequentially numbered, dated folders under `kitchensink/`, each exploring
-one sponsor SDK or one technical question end-to-end. No fixed cadence —
-the unit is the exploration, not the day. Pattern borrowed in spirit from
-Jennifer Dewalt's "180 websites in 180 days": minimum deliverable +
-immutable timestamp. Goal is ambient familiarity with the stack before
-committing to a project.
+Sequentially numbered, dated folders under [`kitchensink/`](./kitchensink),
+each exploring one sponsor SDK or one technical question end-to-end. No
+fixed cadence — the unit is the exploration, not the day. Pattern
+borrowed in spirit from Jennifer Dewalt's "180 websites in 180 days":
+minimum deliverable + immutable timestamp. Goal is ambient familiarity
+with the stack before committing to a project.
+
+See [`kitchensink/README.md`](./kitchensink/README.md) for the index of
+explorations completed so far and what each one demonstrates.
 
 **Phase 2 — apex.**
 Project lands in `apex/` once partner alvo is locked. Starts whenever
@@ -49,4 +52,5 @@ Final deliverables (per ETHGlobal + sponsors):
 
 ## Status
 
-Day 0 — repo scaffolded. Kitchensink not yet started.
+Phase 1 active. Two sponsors explored end-to-end so far (Uniswap,
+KeeperHub) — see [`kitchensink/`](./kitchensink) for the live demos.
