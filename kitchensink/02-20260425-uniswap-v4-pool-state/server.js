@@ -93,6 +93,27 @@ function humanPrice(sqrtPriceX96, dec0, dec1) {
   return raw * 10 ** (dec0 - dec1);
 }
 
+// Compute the "virtual reserves" implied by L at the current price.
+// In a concentrated-liquidity pool, the active L behaves like an x*y=k pool
+// with virtual amounts:  x = L / sqrt(P),  y = L * sqrt(P)
+// These are the token amounts effectively backing the spot price right now.
+// The real, total TVL across all positions can be larger if many positions
+// span this tick — but for "how deep is the pool at the current price?",
+// these virtual amounts are the right number.
+function virtualReserves(sqrtPriceX96, liquidity, dec0, dec1) {
+  if (sqrtPriceX96 === 0n || liquidity === 0n) return { token0: 0, token1: 0 };
+  const Q96 = 2n ** 96n;
+  // raw token0 (in 10^dec0 units) = L * Q96 / sqrtPriceX96
+  // raw token1 (in 10^dec1 units) = L * sqrtPriceX96 / Q96
+  // Use bigint scaling to preserve precision before Number conversion.
+  const SCALE = 10n ** 18n;
+  const x_raw_scaled = (liquidity * Q96 * SCALE) / sqrtPriceX96;
+  const y_raw_scaled = (liquidity * sqrtPriceX96 * SCALE) / Q96;
+  const token0 = Number(x_raw_scaled) / Number(SCALE * 10n ** BigInt(dec0));
+  const token1 = Number(y_raw_scaled) / Number(SCALE * 10n ** BigInt(dec1));
+  return { token0, token1 };
+}
+
 createServer(async (req, res) => {
   if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) {
     const html = await readFile(join(__dirname, 'index.html'), 'utf8');
@@ -150,6 +171,9 @@ createServer(async (req, res) => {
       const price = initialized
         ? humanPrice(sqrtPriceX96, token0.decimals, token1.decimals)
         : null;
+      const reserves = initialized
+        ? virtualReserves(sqrtPriceX96, liquidity, token0.decimals, token1.decimals)
+        : null;
 
       send(res, 200, {
         poolId,
@@ -158,6 +182,8 @@ createServer(async (req, res) => {
         tick,
         protocolFee,
         lpFee,
+        virtualToken0: reserves?.token0 ?? null,
+        virtualToken1: reserves?.token1 ?? null,
         liquidity: liquidity.toString(),
         humanPrice: price, // token1 per 1 token0
         invertedPrice: price ? 1 / price : null, // token0 per 1 token1

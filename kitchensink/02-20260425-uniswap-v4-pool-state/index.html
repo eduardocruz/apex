@@ -429,11 +429,26 @@ document.getElementById('f').addEventListener('submit', async (e) => {
           <p>Anyone swapping ${sym0} ↔ ${sym1} on this pool pays this fee. ${protocolNote}</p>
           ${dynamicFeeNote ? `<p class="aside">${dynamicFeeNote}</p>` : ''}
         </section>`,
-        `<section>
-          <h3>How deep is this pool</h3>
-          <p class="lead">Active liquidity at the current price: ${fmtBig(data.liquidity)}</p>
-          <p>That number is Uniswap's internal "L" parameter, not a dollar amount. Bigger L = better prices for big trades, less slippage. Translating L to "$X locked" needs all the LP positions, which we don't fetch here — but you can compare two pools' L values directly: more is more.</p>
-        </section>`,
+        (() => {
+          const t0 = data.virtualToken0, t1 = data.virtualToken1;
+          // Heuristic: if either side is a USD stablecoin, show a $ total.
+          const stable0 = /USD|DAI/i.test(sym0);
+          const stable1 = /USD|DAI/i.test(sym1);
+          let usdTotal = null;
+          if (stable1) usdTotal = t1 + t0 * data.humanPrice;
+          else if (stable0) usdTotal = t0 + t1 * data.invertedPrice;
+          const t0Str = t0 >= 1 ? fmt(t0, 2) : fmt(t0, 4);
+          const t1Str = t1 >= 1 ? fmt(t1, 2) : fmt(t1, 4);
+          const usdLine = usdTotal != null
+            ? `That's roughly <b>$${fmt(usdTotal, 0)}</b> backing the spot price right now.`
+            : '';
+          return `<section>
+            <h3>How deep is this pool</h3>
+            <p class="lead">Effectively <b>${t0Str} ${sym0}</b> + <b>${t1Str} ${sym1}</b> active at the current price.</p>
+            <p>${usdLine} Bigger numbers here mean less price impact when someone makes a big trade — the pool can absorb more without the price moving much.</p>
+            <p class="aside">This snapshot is the "active tick" only — the slice of liquidity that responds to a tiny next swap. Other LPs may have positions parked at higher or lower prices that wake up only if the price moves there. So the *full* TVL of this pool can be larger than what you see here.</p>
+          </section>`;
+        })(),
         `<section>
           <h3>Pool identity</h3>
           <p class="lead">A unique pool exists for every combo of (token A, token B, fee, tick spacing, hook).</p>
