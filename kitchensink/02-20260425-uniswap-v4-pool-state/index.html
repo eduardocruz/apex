@@ -138,6 +138,40 @@
   }
   .meta .k { color: var(--muted); display: inline-block; min-width: 110px; }
   .meta .v { color: var(--text); }
+  .explain {
+    margin-top: 18px;
+  }
+  .explain section {
+    border-left: 2px solid var(--line);
+    padding: 8px 14px;
+    margin-bottom: 14px;
+  }
+  .explain section h3 {
+    margin: 0 0 4px;
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .explain section p {
+    margin: 0;
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .explain section .lead {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .explain section .aside {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 4px;
+    font-style: italic;
+  }
+  .explain section.attention { border-left-color: var(--accent); }
   details {
     border-top: 1px solid var(--line);
     padding-top: 14px;
@@ -236,7 +270,11 @@
 
   <div id="out" class="card result">
     <div class="price"><span id="priceLine"></span></div>
-    <div class="meta" id="metaBlock"></div>
+    <div class="explain" id="explainBlock"></div>
+    <details>
+      <summary>Technical details (advanced)</summary>
+      <div class="meta" id="metaBlock" style="margin-top: 12px"></div>
+    </details>
     <details>
       <summary>Raw response</summary>
       <pre id="raw"></pre>
@@ -353,24 +391,67 @@ document.getElementById('f').addEventListener('submit', async (e) => {
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
     if (!data.initialized) {
-      $('priceLine').innerHTML = '<span class="uninit">Pool exists in PoolManager but is uninitialized (sqrtPriceX96 == 0).<br>This pool config has not been used yet on this chain.</span>';
+      $('priceLine').innerHTML = '<span class="uninit">This pool config exists onchain but no one has used it yet.<br>Try a different fee/tick combo, or another preset.</span>';
+      $('explainBlock').innerHTML = '';
       $('metaBlock').innerHTML = `<span class="k">poolId:</span> <span class="v">${data.poolId}</span>`;
     } else {
       const sym0 = payload.token0.symbol;
       const sym1 = payload.token1.symbol;
+
+      // Headline: price both directions
       $('priceLine').innerHTML =
         `1 ${sym0} = <span class="out">${fmt(data.humanPrice)} ${sym1}</span>` +
         `<br><span style="font-size:14px;color:var(--muted)">1 ${sym1} = ${fmt(data.invertedPrice, 8)} ${sym0}</span>`;
 
-      const feePct = (payload.fee / 10000).toFixed(4) + '%';
+      // Plain-English explanation block
+      const feePct = payload.fee / 10000;
+      const feeStr = feePct.toFixed(2) + '%';
+      const feeOn1k = (1000 * feePct / 100).toFixed(2);
+      const feeOn100 = (100 * feePct / 100).toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+      const isStablePair = sym0.match(/USD/i) && sym1.match(/USD/i);
+      const dynamicFeeNote = data.lpFee !== payload.fee
+        ? `Note: an active hook is currently overriding the fee — right now you would actually pay ${(data.lpFee / 10000).toFixed(4)}% per swap, not the static ${feeStr}.`
+        : '';
+      const protocolNote = data.protocolFee > 0
+        ? `Of every fee paid, the Uniswap protocol is taking a ${(data.protocolFee / 10000).toFixed(4)}% cut.`
+        : 'The Uniswap protocol itself is not taking a cut from this pool — every fee paid goes to the LPs.';
+
+      $('explainBlock').innerHTML = [
+        `<section class="attention">
+          <h3>Price right now</h3>
+          <p class="lead">1 ${sym0} ≈ ${fmt(data.humanPrice)} ${sym1}</p>
+          <p>This pool sets the price by holding both tokens together — the more of one and the less of the other, the higher the price of the rare side.</p>
+          <p class="aside">This is a live read from the Uniswap v4 contract on Ethereum mainnet, fetched a moment ago.</p>
+        </section>`,
+        `<section>
+          <h3>Trading fee</h3>
+          <p class="lead">${feeStr} per swap${isStablePair ? '' : ` (about $${feeOn1k} on a $1,000 trade)`}</p>
+          <p>Anyone swapping ${sym0} ↔ ${sym1} on this pool pays this fee. ${protocolNote}</p>
+          ${dynamicFeeNote ? `<p class="aside">${dynamicFeeNote}</p>` : ''}
+        </section>`,
+        `<section>
+          <h3>How deep is this pool</h3>
+          <p class="lead">Active liquidity at the current price: ${fmtBig(data.liquidity)}</p>
+          <p>That number is Uniswap's internal "L" parameter, not a dollar amount. Bigger L = better prices for big trades, less slippage. Translating L to "$X locked" needs all the LP positions, which we don't fetch here — but you can compare two pools' L values directly: more is more.</p>
+        </section>`,
+        `<section>
+          <h3>Pool identity</h3>
+          <p class="lead">A unique pool exists for every combo of (token A, token B, fee, tick spacing, hook).</p>
+          <p>That means there can be many ETH/${sym1} pools — each with different fees or behaviours. You're looking at one specific configuration.</p>
+          <p class="aside">poolId on chain: <code style="font-size:11px">${data.poolId.slice(0,18)}…${data.poolId.slice(-6)}</code></p>
+        </section>`,
+      ].join('');
+
+      // Technical details (collapsible) — exact raw values for advanced users
       $('metaBlock').innerHTML = [
-        `<span class="k">fee:</span> <span class="v">${feePct} (${payload.fee} bps)</span>`,
+        `<span class="k">fee (static):</span> <span class="v">${feeStr} (${payload.fee} bps)</span>`,
+        `<span class="k">lpFee (now):</span> <span class="v">${(data.lpFee / 10000).toFixed(4)}% (${data.lpFee} bps)</span>`,
+        `<span class="k">protocolFee:</span> <span class="v">${data.protocolFee} (${(data.protocolFee / 10000).toFixed(4)}%)</span>`,
         `<span class="k">tick:</span> <span class="v">${data.tick}</span>`,
         `<span class="k">tick spacing:</span> <span class="v">${payload.tickSpacing}</span>`,
-        `<span class="k">liquidity:</span> <span class="v">${fmtBig(data.liquidity)}</span>`,
-        `<span class="k">protocolFee:</span> <span class="v">${data.protocolFee}</span>`,
-        `<span class="k">lpFee:</span> <span class="v">${data.lpFee}</span>`,
-        `<span class="k">poolId:</span> <span class="v">${data.poolId}</span>`,
+        `<span class="k">liquidity (L):</span> <span class="v">${fmtBig(data.liquidity)}</span>`,
+        `<span class="k">sqrtPriceX96:</span> <span class="v">${data.sqrtPriceX96}</span>`,
+        `<span class="k">poolId:</span> <span class="v" style="font-size:11px">${data.poolId}</span>`,
       ].join('<br>');
     }
 
@@ -378,6 +459,7 @@ document.getElementById('f').addEventListener('submit', async (e) => {
     out.classList.add('show');
   } catch (err) {
     $('priceLine').innerHTML = `<span class="err">${err.message}</span>`;
+    $('explainBlock').innerHTML = '';
     $('metaBlock').textContent = '';
     $('raw').textContent = err.stack || err.message || '';
     out.classList.add('show');
