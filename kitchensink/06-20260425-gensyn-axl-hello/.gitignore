@@ -1,0 +1,6 @@
+axl-src/
+axl-bin/
+*.pem
+node-a.log
+node-b.log
+.pids

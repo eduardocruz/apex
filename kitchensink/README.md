@@ -19,6 +19,7 @@ hackathon project to one.
 | 03 | [`03-20260425-keeperhub-rest-hello`](./03-20260425-keeperhub-rest-hello) | KeeperHub | A scheduled workflow that runs every 5 minutes in KeeperHub's cloud, plus a bash script that pulls the execution history via REST. Demonstrates the "managed scheduled execution" category — runs continue while your laptop is closed. |
 | 04 | [`04-20260425-ens-resolve-hello`](./04-20260425-ens-resolve-hello) | ENS | Two-form web UI for forward (name → address + text records) and reverse (address → name) resolution via viem. The atomic primitive underneath agent-identity-via-subnames. |
 | 05 | [`05-20260425-0g-inft-explorer`](./05-20260425-0g-inft-explorer) | 0G | Read-only viewer for the AgenticID (ERC-7857) registry on 0G Galileo Testnet. Surfaces what's actually stored when you mint an Agentic ID — descriptions in clear, values as hashes (privacy-preserving by design). |
+| 06 | [`06-20260425-gensyn-axl-hello`](./06-20260425-gensyn-axl-hello) | Gensyn | Two AXL nodes running locally with separate ed25519 identities, peered over `tls://127.0.0.1:9001` and exchanging messages in both directions through the gVisor mesh. Tiny Node proxy + HTML UI to drive Send/Receive. The minimum that satisfies the bounty's "communication across separate AXL nodes" rule. |
 
 ## Conventions
 

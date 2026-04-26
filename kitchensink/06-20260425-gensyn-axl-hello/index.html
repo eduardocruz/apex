@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>kitchensink/06 — Gensyn AXL hello (P2P agent mesh)</title>
+<style>
+  body { font: 14px/1.5 -apple-system, system-ui, sans-serif; max-width: 880px; margin: 30px auto; padding: 0 20px; color: #222; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 24px 0 8px; color: #333; }
+  h3 { font-size: 13px; margin: 14px 0 4px; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+  .lede { color: #666; font-size: 13px; margin: 0 0 18px; }
+  .intro { background: #fff8d6; border: 1px solid #e3d77f; padding: 14px 16px; border-radius: 6px; margin-bottom: 24px; font-size: 13px; }
+  .intro p { margin: 0 0 8px; }
+  .intro strong { color: #614a00; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  fieldset { border: 1px solid #ddd; padding: 14px 16px 16px; border-radius: 6px; }
+  legend { font-weight: 600; padding: 0 8px; }
+  .hint { font-size: 12px; color: #777; margin: 0 0 10px; }
+  label { display: block; font-size: 12px; color: #555; margin: 8px 0 3px; }
+  input, textarea, select { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font: inherit; }
+  textarea { font-family: ui-monospace, Menlo, monospace; font-size: 12px; min-height: 60px; }
+  button { margin-top: 10px; padding: 6px 12px; border: 1px solid #888; background: #fafafa; border-radius: 4px; cursor: pointer; font: inherit; }
+  button:hover { background: #eee; }
+  .out { margin-top: 12px; padding: 10px; background: #f6f6f6; border-radius: 4px; font: 12px ui-monospace, Menlo, monospace; white-space: pre-wrap; word-break: break-all; }
+  .pubkey { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #444; word-break: break-all; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row > * { flex: 0 0 auto; }
+  .row .grow { flex: 1; }
+  .small { font-size: 12px; color: #666; }
+  details { margin-top: 8px; }
+  summary { cursor: pointer; font-size: 12px; color: #666; }
+  .badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 11px; background: #eef; color: #224; margin-right: 6px; }
+  .ok { color: #287a3d; }
+  .err { color: #b22; }
+</style>
+</head>
+<body>
+<h1>kitchensink/06 — Gensyn AXL: two nodes talking</h1>
+<p class="lede">Sponsor: Gensyn (ETHGlobal Open Agents). Bounty: meaningful AXL integration with cross-node message exchange.</p>
+
+<div class="intro">
+  <p><strong>What is AXL?</strong> Gensyn's <em>Agent eXchange Layer</em> — a single Go binary that gives any application an encrypted, decentralized communication layer over a P2P mesh (built on Yggdrasil + gVisor). No central broker, no server to point at.</p>
+  <p><strong>What this page demonstrates.</strong> Two AXL nodes are running on this machine: <strong>node A</strong> (listener on <code>tls://127.0.0.1:9001</code>, HTTP API <code>:9002</code>) and <strong>node B</strong> (peers to A, HTTP API <code>:9012</code>). They have separate ed25519 identities and exchange messages over their own gVisor TCP fabric — not in-process, not via this page's HTTP server (which is just a UI proxy).</p>
+  <p><strong>How to drive it.</strong> Click <em>Refresh</em> on each node to see its public key and peer list. Then send a message from A→B (or B→A) and click <em>Receive</em> on the destination — the body comes back with the sender's <code>X-From-Peer-Id</code>, proving the cross-node hop happened.</p>
+</div>
+
+<div class="grid">
+  <fieldset>
+    <legend>Node A <span class="badge">listener</span></legend>
+    <p class="hint">Listens on <code>tls://127.0.0.1:9001</code> for incoming peers. API on <code>:9002</code>.</p>
+    <button onclick="refresh('a')">Refresh topology</button>
+    <button onclick="recv('a')">Receive</button>
+    <h3>Public key</h3>
+    <div class="pubkey" id="a-pubkey">(click Refresh)</div>
+    <div class="out" id="a-out">—</div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Node B <span class="badge">peer of A</span></legend>
+    <p class="hint">Peers outbound to A's listener. API on <code>:9012</code>.</p>
+    <button onclick="refresh('b')">Refresh topology</button>
+    <button onclick="recv('b')">Receive</button>
+    <h3>Public key</h3>
+    <div class="pubkey" id="b-pubkey">(click Refresh)</div>
+    <div class="out" id="b-out">—</div>
+  </fieldset>
+</div>
+
+<fieldset style="margin-top: 16px;">
+  <legend>Send a message between nodes</legend>
+  <p class="hint">Pick the source node; the UI uses the OTHER node's public key as the destination. Body is sent as raw bytes; AXL is application-agnostic.</p>
+  <div class="row">
+    <label style="margin: 0;">From</label>
+    <select id="from-node">
+      <option value="a">A → B</option>
+      <option value="b">B → A</option>
+    </select>
+  </div>
+  <label>Message</label>
+  <textarea id="msg-body">hello from node A — sent over the mesh, not via HTTP localhost</textarea>
+  <button onclick="send()">Send</button>
+  <div class="out" id="send-out">—</div>
+</fieldset>
+
+<details>
+  <summary>What "demonstrating cross-node communication" means for the bounty</summary>
+  <div class="small" style="margin-top: 8px;">
+    The Gensyn prize requires that AXL is the actual message bus, not a substitute for one. This page proves it: when you click Send, the UI calls <code>POST /send</code> on the source node's HTTP bridge with an <code>X-Destination-Peer-Id</code>. The source node packages the bytes, encrypts them, and routes them through the gVisor TCP layer to the destination node — over the TLS link those nodes established themselves at startup. The receiving node's <code>/recv</code> queue holds the message until you poll it. Nothing about this flow uses a central broker, and the two nodes don't share process memory.
+  </div>
+</details>
+
+<script>
+async function refresh(node) {
+  const out = document.getElementById(node + '-out');
+  out.textContent = 'loading...';
+  try {
+    const r = await fetch('/api/topology/' + node);
+    const data = await r.json();
+    document.getElementById(node + '-pubkey').textContent = data.our_public_key || '(none)';
+    out.textContent = JSON.stringify({
+      our_ipv6: data.our_ipv6,
+      peer_count: (data.peers || []).length,
+      peers: (data.peers || []).map(p => ({ remote: p.remote, uptime: p.uptime })),
+    }, null, 2);
+  } catch (e) { out.innerHTML = '<span class="err">' + e.message + '</span>'; }
+}
+
+async function recv(node) {
+  const out = document.getElementById(node + '-out');
+  out.textContent = 'polling /recv...';
+  try {
+    const r = await fetch('/api/recv/' + node);
+    if (r.status === 204) { out.textContent = '(queue empty — no messages waiting)'; return; }
+    const data = await r.json();
+    out.textContent = 'FROM ' + (data.from || '?') + '\n\n' + data.body;
+  } catch (e) { out.innerHTML = '<span class="err">' + e.message + '</span>'; }
+}
+
+async function send() {
+  const from = document.getElementById('from-node').value;
+  const to = from === 'a' ? 'b' : 'a';
+  const toPeerId = document.getElementById(to + '-pubkey').textContent.trim();
+  const out = document.getElementById('send-out');
+  if (!/^[0-9a-fA-F]{64}$/.test(toPeerId)) {
+    out.innerHTML = '<span class="err">Refresh node ' + to.toUpperCase() + ' first to load its public key.</span>';
+    return;
+  }
+  const message = document.getElementById('msg-body').value;
+  out.textContent = 'sending...';
+  try {
+    const r = await fetch('/api/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, toPeerId, message }),
+    });
+    const data = await r.json();
+    if (data.ok) {
+      out.innerHTML = '<span class="ok">sent ' + data.sentBytes + ' bytes ' + from.toUpperCase() + ' → ' + to.toUpperCase() +
+        '</span>\n\nNow click "Receive" on node ' + to.toUpperCase() + ' to dequeue it.';
+    } else {
+      out.innerHTML = '<span class="err">send failed: ' + JSON.stringify(data) + '</span>';
+    }
+  } catch (e) { out.innerHTML = '<span class="err">' + e.message + '</span>'; }
+}
+</script>
+</body>
+</html>
