@@ -41,3 +41,8 @@ Updated as work happens, not retroactively.
 | 2026-04-25 | `kitchensink/04-20260425-ens-resolve-hello/README.md` | generated | Claude Code (Opus 4.7) | What/why/run + verified output for vitalik.eth. |
 | 2026-04-25 | `kitchensink/04-20260425-ens-resolve-hello/package.json` | generated | Claude Code (Opus 4.7) | type:module, single dep: viem. |
 | 2026-04-25 | `kitchensink/04-20260425-ens-resolve-hello/.env.example` | generated | Claude Code (Opus 4.7) | Optional ETH_RPC_URL override. |
+| 2026-04-25 | `kitchensink/05-20260425-0g-inft-explorer/server.js` | generated | Claude Code (Opus 4.7) | Node http server + viem reads against 0G Galileo Testnet (chain 16602). Reads totalSupply, name, symbol, mintFee, ownerOf, tokenURI, getIntelligentDatas, cloneSource. |
+| 2026-04-25 | `kitchensink/05-20260425-0g-inft-explorer/index.html` | generated | Claude Code (Opus 4.7) | Two-panel UI: registry summary + token inspector with quick-pick token IDs. |
+| 2026-04-25 | `kitchensink/05-20260425-0g-inft-explorer/README.md` | generated | Claude Code (Opus 4.7) | Surfaces ERC-7857 privacy model: descriptions in clear, values as bytes32 hashes. Verified outputs for tokens 0 (4 fields) and 76 (empty). |
+| 2026-04-25 | `kitchensink/05-20260425-0g-inft-explorer/package.json` | generated | Claude Code (Opus 4.7) | type:module, single dep: viem. |
+| 2026-04-25 | `kitchensink/05-20260425-0g-inft-explorer/.env.example` | generated | Claude Code (Opus 4.7) | Optional ZG_RPC_URL override. |
