@@ -5,6 +5,9 @@ ETHGlobal Open Agents (2026-04-24 → 2026-05-06).
 Solo build by Eduardo Cruz, with Claude Code (Opus 4.7) as coding assistant.
 See `AI-USAGE.md` for the audit log and `CLAUDE.md` for the attribution rule.
 
+Sponsor feedback files: [`FEEDBACK-uniswap.md`](./FEEDBACK-uniswap.md),
+[`FEEDBACK-keeperhub.md`](./FEEDBACK-keeperhub.md).
+
 ## What this repo is
 
 A two-phase build:

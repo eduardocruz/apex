@@ -20,7 +20,8 @@ Updated as work happens, not retroactively.
 | 2026-04-25 | `CLAUDE.md` | generated | Claude Code (Opus 4.7) | Initial repo policy doc |
 | 2026-04-25 | `AI-USAGE.md` | generated | Claude Code (Opus 4.7) | This file |
 | 2026-04-25 | `README.md` | generated | Claude Code (Opus 4.7) | Initial scaffold |
-| 2026-04-25 | `FEEDBACK.md` | generated | Claude Code (Opus 4.7) | Uniswap prize submission feedback file |
+| 2026-04-25 | `FEEDBACK-uniswap.md` | generated | Claude Code (Opus 4.7) | Uniswap prize submission feedback file (renamed from FEEDBACK.md) |
+| 2026-04-25 | `FEEDBACK-keeperhub.md` | generated | Claude Code (Opus 4.7) | KeeperHub $500 feedback bounty submission |
 | 2026-04-25 | `kitchensink/01-20260425-uniswap-quote-ui/server.js` | generated | Claude Code (Opus 4.7) | 59-line Node http server, no deps. Loads .env, serves index.html, proxies POST /api/quote to Uniswap. |
 | 2026-04-25 | `kitchensink/01-20260425-uniswap-quote-ui/index.html` | generated | Claude Code (Opus 4.7) | 308-line vanilla HTML/CSS/JS. Token dropdowns + form + result panel + raw JSON. Handles CLASSIC + UniswapX response shapes. |
 | 2026-04-25 | `kitchensink/01-20260425-uniswap-quote-ui/README.md` | generated | Claude Code (Opus 4.7) | Setup, run instructions, scope notes |
