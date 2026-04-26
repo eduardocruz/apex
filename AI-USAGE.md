@@ -46,3 +46,15 @@ Updated as work happens, not retroactively.
 | 2026-04-25 | `kitchensink/05-20260425-0g-inft-explorer/README.md` | generated | Claude Code (Opus 4.7) | Surfaces ERC-7857 privacy model: descriptions in clear, values as bytes32 hashes. Verified outputs for tokens 0 (4 fields) and 76 (empty). |
 | 2026-04-25 | `kitchensink/05-20260425-0g-inft-explorer/package.json` | generated | Claude Code (Opus 4.7) | type:module, single dep: viem. |
 | 2026-04-25 | `kitchensink/05-20260425-0g-inft-explorer/.env.example` | generated | Claude Code (Opus 4.7) | Optional ZG_RPC_URL override. |
+| 2026-04-25 | `kitchensink/06-20260425-gensyn-axl-hello/install.sh` | generated | Claude Code (Opus 4.7) | Clone gensyn-ai/axl + go build → axl-bin/node. Idempotent. |
+| 2026-04-25 | `kitchensink/06-20260425-gensyn-axl-hello/start.sh` | generated | Claude Code (Opus 4.7) | Generate ed25519 PEMs, start node A (listener) + node B (peer) + UI proxy on :5959. |
+| 2026-04-25 | `kitchensink/06-20260425-gensyn-axl-hello/stop.sh` | generated | Claude Code (Opus 4.7) | Kill via .pids + pkill fallback. |
+| 2026-04-25 | `kitchensink/06-20260425-gensyn-axl-hello/node-config-a.json` | generated | Claude Code (Opus 4.7) | Listener config (Listen tls://127.0.0.1:9001, api 9002, tcp 7000). |
+| 2026-04-25 | `kitchensink/06-20260425-gensyn-axl-hello/node-config-b.json` | generated | Claude Code (Opus 4.7) | Peer config (Peers ["tls://127.0.0.1:9001"], api 9012, tcp 7000 — must match A's tcp_port). |
+| 2026-04-25 | `kitchensink/06-20260425-gensyn-axl-hello/server.js` | generated | Claude Code (Opus 4.7) | Tiny Node http proxy: serves index.html, forwards /api/topology/{a,b}, /api/send, /api/recv/{a,b} to the right AXL node. |
+| 2026-04-25 | `kitchensink/06-20260425-gensyn-axl-hello/index.html` | generated | Claude Code (Opus 4.7) | Two-pane UI: refresh topology, send A↔B, receive. Yellow intro box explaining what AXL is and what the page proves. |
+| 2026-04-25 | `kitchensink/06-20260425-gensyn-axl-hello/README.md` | generated | Claude Code (Opus 4.7) | Setup, verified output, gotcha about virtual `tcp_port`, decision impact (ENS+AXL+0G Storage combo for apex). |
+| 2026-04-25 | `kitchensink/06-20260425-gensyn-axl-hello/package.json` | generated | Claude Code (Opus 4.7) | type:module, no npm deps. |
+| 2026-04-25 | `kitchensink/06-20260425-gensyn-axl-hello/.gitignore` | generated | Claude Code (Opus 4.7) | axl-src/, axl-bin/, *.pem, logs. |
+| 2026-04-25 | `kitchensink/README.md` | assisted | Claude Code (Opus 4.7) | Added row 06 (Gensyn AXL) to index. |
+| 2026-04-25 | `FEEDBACK-gensyn.md` | generated | Claude Code (Opus 4.7) | Gensyn $5k feedback bounty submission: tools used, what worked, doc gaps (virtual tcp_port not flagged, no two-node hello in repo, no Node/Python SDK), feature requests, comparisons. |

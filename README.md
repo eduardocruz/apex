@@ -6,7 +6,8 @@ Solo build by Eduardo Cruz, with Claude Code (Opus 4.7) as coding assistant.
 See `AI-USAGE.md` for the audit log and `CLAUDE.md` for the attribution rule.
 
 Sponsor feedback files: [`FEEDBACK-uniswap.md`](./FEEDBACK-uniswap.md),
-[`FEEDBACK-keeperhub.md`](./FEEDBACK-keeperhub.md).
+[`FEEDBACK-keeperhub.md`](./FEEDBACK-keeperhub.md),
+[`FEEDBACK-gensyn.md`](./FEEDBACK-gensyn.md).
 
 ## What this repo is
 
@@ -55,6 +56,6 @@ Final deliverables (per ETHGlobal + sponsors):
 
 ## Status
 
-Phase 1 active. Four sponsors explored end-to-end so far (Uniswap,
-KeeperHub, ENS, 0G) — see [`kitchensink/`](./kitchensink) for the live
-demos.
+Phase 1 active. Five sponsors explored end-to-end so far (Uniswap,
+KeeperHub, ENS, 0G, Gensyn) — see [`kitchensink/`](./kitchensink) for
+the live demos.
