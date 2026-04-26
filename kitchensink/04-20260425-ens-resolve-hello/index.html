@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ENS resolver — hello world</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font: 15px/1.45 system-ui, -apple-system, sans-serif; max-width: 760px; margin: 2.5rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
+    p.tag { color: #666; margin: 0 0 1.6rem; }
+    fieldset { border: 1px solid #ccc; border-radius: 6px; padding: 1rem 1.2rem 1.2rem; margin-bottom: 1.2rem; }
+    legend { font-weight: 600; padding: 0 .4rem; }
+    label { display: block; margin: .6rem 0 .2rem; font-size: 13px; color: #555; }
+    input { width: 100%; padding: .55rem .7rem; font: inherit; box-sizing: border-box; border: 1px solid #bbb; border-radius: 4px; }
+    button { margin-top: .8rem; padding: .55rem 1.1rem; font: inherit; cursor: pointer; background: #1a1a1a; color: white; border: 0; border-radius: 4px; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    pre { background: #f4f4f4; padding: .9rem 1rem; border-radius: 6px; font-size: 12.5px; overflow-x: auto; white-space: pre-wrap; }
+    .out { margin-top: .9rem; }
+    .examples { font-size: 12.5px; color: #777; margin-top: .35rem; }
+    .examples code { background: #eee; padding: 1px 4px; border-radius: 3px; }
+    @media (prefers-color-scheme: dark) {
+      pre { background: #222; }
+      input, fieldset { background: #1a1a1a; border-color: #333; }
+      .examples code { background: #333; }
+    }
+  </style>
+</head>
+<body>
+  <h1>ENS resolver — hello world</h1>
+  <p class="tag">Reads only. Mainnet. <code>viem.getEnsAddress</code> + <code>viem.getEnsName</code> + <code>viem.getEnsText</code>.</p>
+
+  <fieldset>
+    <legend>Forward — name → address (+ text records)</legend>
+    <label for="fname">ENS name</label>
+    <input id="fname" value="vitalik.eth" />
+    <div class="examples">try: <code>vitalik.eth</code> · <code>nick.eth</code> · <code>brantly.eth</code></div>
+    <button id="fbtn">Resolve</button>
+    <div class="out"><pre id="fout">(no result yet)</pre></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Reverse — address → name</legend>
+    <label for="raddr">Ethereum address</label>
+    <input id="raddr" value="0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" />
+    <div class="examples">try: vitalik's address (above) · or any 0x address you know</div>
+    <button id="rbtn">Reverse-resolve</button>
+    <div class="out"><pre id="rout">(no result yet)</pre></div>
+  </fieldset>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    async function call(path, body, outEl, btnEl) {
+      btnEl.disabled = true;
+      outEl.textContent = '(resolving…)';
+      try {
+        const r = await fetch(path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const j = await r.json();
+        outEl.textContent = JSON.stringify(j, null, 2);
+      } catch (e) {
+        outEl.textContent = 'Error: ' + e.message;
+      } finally {
+        btnEl.disabled = false;
+      }
+    }
+    $('fbtn').onclick = () => call('/api/forward', { name: $('fname').value.trim() }, $('fout'), $('fbtn'));
+    $('rbtn').onclick = () => call('/api/reverse', { address: $('raddr').value.trim() }, $('rout'), $('rbtn'));
+  </script>
+</body>
+</html>

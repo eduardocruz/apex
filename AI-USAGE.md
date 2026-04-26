@@ -36,3 +36,8 @@ Updated as work happens, not retroactively.
 | 2026-04-25 | `kitchensink/03-20260425-keeperhub-rest-hello/format_executions.py` | generated | Claude Code (Opus 4.7) | Reads KeeperHub executions JSON from stdin, prints a sorted table. Standalone-runnable. |
 | 2026-04-25 | `kitchensink/03-20260425-keeperhub-rest-hello/README.md` | generated | Claude Code (Opus 4.7) | Setup steps (UI workflow build + REST observation), capability table, why-not-REST-create note, decision impact. |
 | 2026-04-25 | `kitchensink/03-20260425-keeperhub-rest-hello/.env.example` | generated | Claude Code (Opus 4.7) | KEEPERHUB_API_KEY + KEEPERHUB_WORKFLOW_ID template. |
+| 2026-04-25 | `kitchensink/04-20260425-ens-resolve-hello/server.js` | generated | Claude Code (Opus 4.7) | Node http server + viem ENS reads (getEnsAddress / getEnsName / getEnsText). Required `normalize` import from `viem/ens` not viem root. |
+| 2026-04-25 | `kitchensink/04-20260425-ens-resolve-hello/index.html` | generated | Claude Code (Opus 4.7) | Two-form UI: forward (name→address+text records) + reverse (address→name). |
+| 2026-04-25 | `kitchensink/04-20260425-ens-resolve-hello/README.md` | generated | Claude Code (Opus 4.7) | What/why/run + verified output for vitalik.eth. |
+| 2026-04-25 | `kitchensink/04-20260425-ens-resolve-hello/package.json` | generated | Claude Code (Opus 4.7) | type:module, single dep: viem. |
+| 2026-04-25 | `kitchensink/04-20260425-ens-resolve-hello/.env.example` | generated | Claude Code (Opus 4.7) | Optional ETH_RPC_URL override. |

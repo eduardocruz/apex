@@ -55,5 +55,5 @@ Final deliverables (per ETHGlobal + sponsors):
 
 ## Status
 
-Phase 1 active. Two sponsors explored end-to-end so far (Uniswap,
-KeeperHub) — see [`kitchensink/`](./kitchensink) for the live demos.
+Phase 1 active. Three sponsors explored end-to-end so far (Uniswap,
+KeeperHub, ENS) — see [`kitchensink/`](./kitchensink) for the live demos.

@@ -17,11 +17,7 @@ hackathon project to one.
 | 01 | [`01-20260425-uniswap-quote-ui`](./01-20260425-uniswap-quote-ui) | Uniswap | Tiny Node + HTML page that posts to the Trading API and shows a live swap quote (1 ETH → X USDC). Zero npm dependencies, ~150 lines total. |
 | 02 | [`02-20260425-uniswap-v4-pool-state`](./02-20260425-uniswap-v4-pool-state) | Uniswap | Reads a v4 pool's state directly from the StateView contract via viem — price, tick, fees, and the *virtual reserves* (translates the raw L parameter into "X ETH + Y USDC backing the spot price ≈ \$Z"). |
 | 03 | [`03-20260425-keeperhub-rest-hello`](./03-20260425-keeperhub-rest-hello) | KeeperHub | A scheduled workflow that runs every 5 minutes in KeeperHub's cloud, plus a bash script that pulls the execution history via REST. Demonstrates the "managed scheduled execution" category — runs continue while your laptop is closed. |
-
-## Drafts (not in the public index)
-
-[`_drafts/`](./_drafts) — exploration sketches that didn't reach a
-runnable hello world. Kept for context, not as deliverables.
+| 04 | [`04-20260425-ens-resolve-hello`](./04-20260425-ens-resolve-hello) | ENS | Two-form web UI for forward (name → address + text records) and reverse (address → name) resolution via viem. The atomic primitive underneath agent-identity-via-subnames. |
 
 ## Conventions
 
