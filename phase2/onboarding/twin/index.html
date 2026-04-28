@@ -52,9 +52,12 @@
 <div class="wrap">
   <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
     <h1>Mint a Twin</h1>
-    <a href="/registry" style="color: #888; font-size: 13px; text-decoration: none;">Registry →</a>
+    <div style="display: flex; gap: 14px; align-items: center;">
+      <a href="/registry" style="color: #888; font-size: 13px; text-decoration: none;">Registry →</a>
+      <button id="connect-btn" onclick="connectWallet()" style="background: transparent; color: #ffd166; border: 1px solid #ffd166; padding: 5px 12px; border-radius: 4px; font: inherit; font-size: 12px; cursor: pointer;">Connect wallet</button>
+    </div>
   </div>
-  <p class="lede">Eight forced choices. One role. Your twin lives in the Apex network state.</p>
+  <p class="lede">Eight forced choices. One role. Your twin lives in the Apex network state. Connect a wallet first — that wallet becomes the twin's owner.</p>
   <div class="progress" id="progress"></div>
   <div class="step" id="step"></div>
 </div>
@@ -432,6 +435,43 @@ function generateAgenticIdJson() {
   };
 }
 
+// ---- Wallet
+
+let connectedWallet = null;
+
+async function connectWallet() {
+  if (!window.ethereum) {
+    alert("No injected wallet found. Install MetaMask, Rainbow, or any EIP-1193 wallet.");
+    return;
+  }
+  try {
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    connectedWallet = accounts[0];
+    localStorage.setItem("apex.owner", connectedWallet);
+    updateWalletButton();
+  } catch (e) {
+    alert("Connect rejected: " + (e.message || e));
+  }
+}
+
+function updateWalletButton() {
+  const btn = document.getElementById("connect-btn");
+  if (!btn) return;
+  if (connectedWallet) {
+    btn.textContent = `${connectedWallet.slice(0, 6)}…${connectedWallet.slice(-4)}`;
+    btn.style.borderColor = "#82bf85";
+    btn.style.color = "#82bf85";
+  }
+}
+
+async function signMintMessage(slug) {
+  const message = `Mint Apex Twin\n\nSlug: ${slug}\nNetwork: Apex (apex-ns.eth)\n\nBy signing, you become the owner of this twin. You can transfer or revoke later.`;
+  return await window.ethereum.request({
+    method: "personal_sign",
+    params: [message, connectedWallet],
+  });
+}
+
 // ---- Utils
 
 function download(filename, content) {
@@ -449,7 +489,22 @@ async function mintTwin() {
     out.innerHTML = `<div class="preview" style="border-color: #d97a7a;">ENS name is empty — go back to the influence step and set one.</div>`;
     return;
   }
-  btn.disabled = true; btn.textContent = "minting…";
+  if (!connectedWallet) {
+    out.innerHTML = `<div class="preview" style="border-color: #d97a7a;">Connect your wallet first — that wallet becomes the twin's owner.</div>`;
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = "signing…";
+  let ownerSig;
+  try {
+    ownerSig = await signMintMessage(slugify(state.ensName));
+  } catch (e) {
+    out.innerHTML = `<div class="preview" style="border-color: #d97a7a;">Signature rejected: ${escapeHtml(e.message || e)}</div>`;
+    btn.disabled = false; btn.textContent = "Mint twin";
+    return;
+  }
+
+  btn.textContent = "minting…";
   try {
     const r = await fetch("/api/mint", {
       method: "POST",
@@ -463,6 +518,8 @@ async function mintTwin() {
         soulMd: generateSoulMd(),
         traitsJson: generateTraitsJson(),
         agenticIdJson: generateAgenticIdJson(),
+        ownerSig,
+        ownerAddress: connectedWallet,
       }),
     });
     const data = await r.json();
@@ -502,9 +559,25 @@ function escapeHtml(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+function slugify(s) {
+  return String(s).toLowerCase().trim()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+}
+
 // ---- Boot
 
-render();
+(async () => {
+  // Restore connection silently if user already authorized this origin.
+  if (window.ethereum) {
+    try {
+      const accounts = await window.ethereum.request({ method: "eth_accounts" });
+      if (accounts && accounts[0]) { connectedWallet = accounts[0]; updateWalletButton(); }
+    } catch {}
+  }
+  render();
+})();
 </script>
 </body>
 </html>

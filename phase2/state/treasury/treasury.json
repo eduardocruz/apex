@@ -1,0 +1,12 @@
+{
+  "ens": "treasury.state.apex-ns.eth",
+  "address": "0x43571CF2b9C423e7642aa8D9007A6706056C7EBD",
+  "type": "EOA-provisional",
+  "purpose": "public-goods treasury — receives 15% of audit fees, 100% of heartbeat tax, all reactivation fees",
+  "governance": "Provisional Rules until Constitution Article II §3 ratifies; then Safe multisig per Article V",
+  "inflows": [],
+  "outflows": [],
+  "balance_og": 0,
+  "created_at": "2026-04-28T15:51:22.331Z",
+  "last_updated": "2026-04-28T15:51:22.331Z"
+}

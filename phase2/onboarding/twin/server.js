@@ -14,7 +14,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Wallet } from 'ethers';
+import { Wallet, verifyMessage } from 'ethers';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '../../..');
@@ -52,22 +52,28 @@ function slugify(s) {
     .slice(0, 40);
 }
 
-async function registerSubname({ slug, address, role, traits, voice, parentalAdviceWeight }) {
+function mintMessage(slug) {
+  return `Mint Apex Twin\n\nSlug: ${slug}\nNetwork: Apex (apex-ns.eth)\n\nBy signing, you become the owner of this twin. You can transfer or revoke later.`;
+}
+
+async function registerSubname({ slug, address, role, traits, voice, parentalAdviceWeight, owner }) {
   if (!NAMESTONE_API_KEY) {
     return { skipped: true, reason: 'NAMESTONE_API_KEY not set in .env' };
   }
+  const text_records = {
+    'apex.role': role,
+    'apex.traits': JSON.stringify(traits),
+    'apex.voice': voice.join(','),
+    'apex.parental_advice_weight': String(parentalAdviceWeight),
+    'apex.soul_status': 'local-only-mock; cipher hash pending 0G Storage',
+    'description': `Apex citizen — ${role} — voice: ${voice.join(', ')}`,
+  };
+  if (owner) text_records['apex.owner'] = owner;
   const body = {
     domain: APEX_PARENT_ENS,
     name: `${slug}.${CITIZEN_NAMESPACE}`,
     address,
-    text_records: {
-      'apex.role': role,
-      'apex.traits': JSON.stringify(traits),
-      'apex.voice': voice.join(','),
-      'apex.parental_advice_weight': String(parentalAdviceWeight),
-      'apex.soul_status': 'local-only-mock; cipher hash pending 0G Storage',
-      'description': `Apex citizen — ${role} — voice: ${voice.join(', ')}`,
-    },
+    text_records,
   };
   try {
     const r = await fetch(NAMESTONE_ENDPOINT, {
@@ -85,12 +91,26 @@ async function registerSubname({ slug, address, role, traits, voice, parentalAdv
 }
 
 async function safeMint(payload) {
-  const { ensName, role, traits, voice, parentalAdviceWeight, soulMd, traitsJson, agenticIdJson } = payload;
+  const { ensName, role, traits, voice, parentalAdviceWeight, soulMd, traitsJson, agenticIdJson, ownerSig, ownerAddress } = payload;
   if (!ensName || !role || !traits || !soulMd) {
     return { ok: false, error: 'missing fields' };
   }
   const slug = slugify(ensName);
   if (!slug) return { ok: false, error: 'invalid ens name' };
+
+  // 0. Verify owner signature if provided. Genesis bootstrap leaves these
+  //    blank and the citizen is recorded as project-controlled.
+  let verifiedOwner = null;
+  if (ownerSig && ownerAddress) {
+    const expectedMsg = mintMessage(slug);
+    let recovered;
+    try { recovered = verifyMessage(expectedMsg, ownerSig); }
+    catch (e) { return { ok: false, error: `bad signature: ${e.message}` }; }
+    if (recovered.toLowerCase() !== ownerAddress.toLowerCase()) {
+      return { ok: false, error: 'signature does not match claimed owner' };
+    }
+    verifiedOwner = recovered;
+  }
 
   const dir = path.join(CITIZENS_DIR, slug);
   if (fs.existsSync(dir)) {
@@ -102,12 +122,14 @@ async function safeMint(payload) {
   const wallet = Wallet.createRandom();
   const twinAddress = wallet.address;
 
-  // 2. Update agentic-id.json with real address + parent ens
+  // 2. Update agentic-id.json with real address + parent ens + verified owner
   const fullEns = `${slug}.${CITIZEN_NAMESPACE}.${APEX_PARENT_ENS}`;
   const idDoc = {
     ...agenticIdJson,
     ensName: fullEns,
     twinAddress,
+    owner: verifiedOwner || agenticIdJson.owner || '(project-controlled at genesis)',
+    ownerVerified: !!verifiedOwner,
   };
 
   // 3. Persist files
@@ -134,6 +156,7 @@ async function safeMint(payload) {
   // 4. Register Namestone subname
   const namestone = await registerSubname({
     slug, address: twinAddress, role, traits, voice, parentalAdviceWeight,
+    owner: verifiedOwner,
   });
 
   return {
@@ -173,7 +196,9 @@ const server = http.createServer(async (req, res) => {
           return {
             slug,
             ens: id.ensName,
-            address: id.twinAddress || id.owner,
+            address: id.twinAddress,
+            owner: id.owner,
+            ownerVerified: !!id.ownerVerified,
             role: id.role,
             traits: id.traits,
             voice: id.voice,

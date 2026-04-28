@@ -19,3 +19,4 @@ build/
 checkins/
 twin-*.txt
 phase2/citizens/*/wallet.json
+phase2/state/treasury/wallet.json

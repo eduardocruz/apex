@@ -53,8 +53,14 @@
       <a href="/registry" class="active">Registry</a>
       <a href="/">Mint a Twin</a>
     </nav>
+    <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
+      <label style="color: #888; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+        <input type="checkbox" id="mine-only" /> Mine only
+      </label>
+      <button id="connect-btn" onclick="connectWallet()" style="background: transparent; color: #ffd166; border: 1px solid #ffd166; padding: 5px 12px; border-radius: 4px; font: inherit; font-size: 12px; cursor: pointer;">Connect wallet</button>
+    </div>
   </header>
-  <p class="lede">Every citizen of the Apex network state. Click any ENS to verify it resolves.</p>
+  <p class="lede">Every citizen of the Apex network state. Connect a wallet and toggle "Mine only" to see twins you own.</p>
   <div class="stats" id="stats"></div>
   <div id="list"></div>
 </div>
@@ -62,31 +68,78 @@
 <script>
 const ROLE_ORDER = ["executive", "legislative", "judicial", "ambassador", "worker", "outsider"];
 
+let connectedWallet = null;
+let allCitizens = [];
+let parentEns = "";
+
+async function connectWallet() {
+  if (!window.ethereum) { alert("No injected wallet found."); return; }
+  const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+  connectedWallet = accounts[0];
+  updateWalletButton();
+  render();
+}
+
+function updateWalletButton() {
+  const btn = document.getElementById("connect-btn");
+  if (!btn) return;
+  if (connectedWallet) {
+    btn.textContent = `${connectedWallet.slice(0, 6)}…${connectedWallet.slice(-4)}`;
+    btn.style.borderColor = "#82bf85";
+    btn.style.color = "#82bf85";
+  }
+}
+
 async function load() {
   const r = await fetch("/api/citizens");
   const data = await r.json();
+  allCitizens = data.citizens;
+  parentEns = data.parent;
+  if (window.ethereum) {
+    try {
+      const accounts = await window.ethereum.request({ method: "eth_accounts" });
+      if (accounts && accounts[0]) { connectedWallet = accounts[0]; updateWalletButton(); }
+    } catch {}
+  }
+  document.getElementById("mine-only").addEventListener("change", render);
+  render();
+}
+
+function render() {
+  const mineOnly = document.getElementById("mine-only").checked;
+  let citizens = allCitizens;
+  if (mineOnly) {
+    if (!connectedWallet) {
+      document.getElementById("list").innerHTML = `<div class="empty">Connect a wallet to filter citizens you own.</div>`;
+      document.getElementById("stats").innerHTML = "";
+      return;
+    }
+    citizens = allCitizens.filter(c => (c.owner || "").toLowerCase() === connectedWallet.toLowerCase());
+  }
 
   const stats = document.getElementById("stats");
-  const genesisCount = data.citizens.filter(c => c.genesis).length;
-  const founderCount = data.citizens.filter(c => c.founder).length;
-  const roles = new Set(data.citizens.map(c => c.role));
+  const genesisCount = citizens.filter(c => c.genesis).length;
+  const founderCount = citizens.filter(c => c.founder).length;
+  const verifiedCount = citizens.filter(c => c.ownerVerified).length;
+  const roles = new Set(citizens.map(c => c.role));
 
   stats.innerHTML = `
-    <div class="stat"><div class="num">${data.count}</div><div class="lbl">citizens total</div></div>
+    <div class="stat"><div class="num">${citizens.length}</div><div class="lbl">${mineOnly ? "yours" : "citizens total"}</div></div>
     <div class="stat"><div class="num">${genesisCount}</div><div class="lbl">genesis</div></div>
     <div class="stat"><div class="num">${founderCount}</div><div class="lbl">founders</div></div>
+    <div class="stat"><div class="num">${verifiedCount}</div><div class="lbl">owner verified</div></div>
     <div class="stat"><div class="num">${roles.size}</div><div class="lbl">roles filled</div></div>
-    <div class="stat"><div class="num">${data.parent}</div><div class="lbl">parent ens</div></div>
+    <div class="stat"><div class="num">${parentEns}</div><div class="lbl">parent ens</div></div>
   `;
 
   const list = document.getElementById("list");
-  if (data.count === 0) {
-    list.innerHTML = `<div class="empty">No citizens yet. <a href="/">Mint the first twin →</a></div>`;
+  if (citizens.length === 0) {
+    list.innerHTML = `<div class="empty">${mineOnly ? "You don't own any citizens yet." : "No citizens yet."} <a href="/">Mint a twin →</a></div>`;
     return;
   }
 
   // Sort: genesis first, then by role order, then by minted_at
-  const sorted = [...data.citizens].sort((a, b) => {
+  const sorted = [...citizens].sort((a, b) => {
     if (a.genesis !== b.genesis) return b.genesis - a.genesis;
     const ra = ROLE_ORDER.indexOf(a.role), rb = ROLE_ORDER.indexOf(b.role);
     if (ra !== rb) return ra - rb;
@@ -103,11 +156,17 @@ async function load() {
       </div>
     `).join("");
     const voice = (c.voice || []).map(v => `<span class="pill">${escapeHtml(v)}</span>`).join("");
+    const isMine = connectedWallet && (c.owner || "").toLowerCase() === connectedWallet.toLowerCase();
     const badges = [
       `<span class="role-badge">${escapeHtml(c.role)}</span>`,
       c.genesis ? `<span class="role-badge genesis-badge">genesis</span>` : "",
       c.founder ? `<span class="role-badge founder-badge">founder</span>` : "",
+      isMine ? `<span class="role-badge founder-badge">mine</span>` : "",
+      c.ownerVerified ? `<span class="role-badge" style="background:#1a3a3a;color:#82bfbf;">owner verified</span>` : "",
     ].join("");
+    const ownerLine = c.owner && c.owner !== "(project-controlled at genesis)" && !c.owner.startsWith("(")
+      ? `<div class="meta" style="margin-top: 4px;">owner: ${escapeHtml(c.owner)}</div>`
+      : c.genesis ? `<div class="meta" style="margin-top: 4px;">owner: project-controlled (genesis)</div>` : "";
     return `
       <div class="citizen ${c.genesis ? "genesis" : ""}">
         <div>
@@ -115,7 +174,8 @@ async function load() {
           <div class="ens" style="margin-top: 8px;">
             <a href="https://app.ens.domains/${c.ens}" target="_blank">${escapeHtml(c.ens || "(unset)")}</a>
           </div>
-          <div class="meta">${escapeHtml(c.address || "(no address)")}</div>
+          <div class="meta">twin: ${escapeHtml(c.address || "(no address)")}</div>
+          ${ownerLine}
           ${traits ? `<div class="traits">${traits}</div>` : ""}
           ${voice ? `<div class="voice-pills">${voice}</div>` : ""}
         </div>
