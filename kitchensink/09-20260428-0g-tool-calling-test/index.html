@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>kitchensink/09 — 0G Compute tool-calling: full agent loop</title>
+<style>
+  body { font: 14px/1.55 -apple-system, system-ui, sans-serif; max-width: 980px; margin: 30px auto; padding: 0 20px; color: #222; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 22px 0 6px; color: #333; }
+  .lede { color: #666; font-size: 13px; margin: 0 0 18px; }
+  .intro { background: #fff8d6; border: 1px solid #e3d77f; padding: 14px 16px; border-radius: 6px; margin-bottom: 18px; font-size: 13px; }
+  .intro p { margin: 0 0 8px; }
+  .intro code { background: #fff; padding: 1px 4px; border-radius: 3px; }
+  fieldset { border: 1px solid #ddd; padding: 14px 16px 16px; border-radius: 6px; margin-bottom: 16px; }
+  legend { font-weight: 600; padding: 0 8px; }
+  label { display: block; font-size: 12px; color: #555; margin: 8px 0 3px; }
+  input, textarea { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font: inherit; }
+  button { margin-top: 10px; padding: 8px 18px; border: 1px solid #888; background: #fafafa; border-radius: 4px; cursor: pointer; font: inherit; font-weight: 600; }
+  button:hover { background: #eee; }
+  button:disabled { opacity: 0.5; cursor: wait; }
+  .out { margin-top: 6px; padding: 10px; background: #f6f6f6; border-radius: 4px; font: 12px ui-monospace, Menlo, monospace; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow: auto; }
+  .answer { background: #e8f5e9; border: 1px solid #82bf85; padding: 16px; border-radius: 6px; font-size: 16px; line-height: 1.5; margin-bottom: 14px; }
+  .turn { border: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
+  .turn-head { padding: 8px 10px; background: #f0f0f5; font-size: 12px; display: flex; gap: 8px; align-items: center; }
+  .turn-llm  { background: #f0f0f5; }
+  .turn-tool { background: #fff5e6; }
+  .turn-body { padding: 10px; font: 12px ui-monospace, Menlo, monospace; white-space: pre-wrap; word-break: break-all; max-height: 240px; overflow: auto; }
+  .badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 11px; background: #eef; color: #224; font-family: ui-monospace, Menlo, monospace; }
+  .badge-tool { background: #ffe0b3; color: #6e3a00; }
+  .arrow { color: #999; font-family: ui-monospace, Menlo, monospace; }
+  table.who { border-collapse: collapse; font-size: 13px; width: 100%; margin: 8px 0; }
+  table.who th, table.who td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; vertical-align: top; }
+  table.who th { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<h1>kitchensink/09 — 0G Compute tool calling, full agent loop</h1>
+<p class="lede">The probe with implementation: model emits a tool call, our server executes the tool, model sees the result, model writes the human answer. Click once, watch all turns.</p>
+
+<div class="intro">
+  <p><strong>The conceptual model — read once, never wonder again:</strong></p>
+  <table class="who">
+    <tr><th>Layer</th><th>What it does</th><th>Who provides it</th></tr>
+    <tr><td>The model (qwen2.5-7b-instruct)</td><td>Reads the conversation, emits text or a JSON request to call a tool. <strong>Never executes anything.</strong></td><td>0G Compute Network (a GPU running open-source weights)</td></tr>
+    <tr><td>The tools (e.g. <code>get_weather</code>)</td><td>The actual code that fetches data, hits an API, etc.</td><td><strong>We do.</strong> They live in <code>server.js</code> as <code>TOOL_IMPLEMENTATIONS</code>. In Phase 3 they will live in MCP servers.</td></tr>
+    <tr><td>The dispatcher</td><td>Receives the model's tool-call request, runs the matching tool, pushes the result back to the model.</td><td><strong>We do.</strong> The agent loop in <code>server.js</code>.</td></tr>
+    <tr><td>The OpenAI tool-calling protocol</td><td>The wire format both sides agree on (<code>tools</code>, <code>tool_calls</code>, <code>finish_reason</code>).</td><td>OpenAI defined it. 0G Compute supports it. The model was trained against it.</td></tr>
+  </table>
+  <p>The model never reaches the network. We do. That's why MCP integration in Phase 3 is straightforward — only the dispatcher's executor changes.</p>
+</div>
+
+<fieldset>
+  <legend>Status</legend>
+  <button onclick="loadInfo()">Refresh info</button>
+  <div class="out" id="info">click Refresh to load</div>
+</fieldset>
+
+<fieldset>
+  <legend>Run the loop</legend>
+  <label>Question</label>
+  <input id="msg" value="What is the weather in Recife right now?" />
+  <p style="font-size: 12px; color: #666; margin: 4px 0 0;">
+    Try also: "How is Berlin's weather?", "Tell me the temperature in New York", or something unrelated to weather to see the model answer without calling a tool.
+  </p>
+  <button id="probe-btn" onclick="run()">Send</button>
+  <div id="result" style="margin-top: 14px;"></div>
+</fieldset>
+
+<script>
+async function loadInfo() {
+  const out = document.getElementById('info');
+  out.textContent = 'loading...';
+  try {
+    const r = await fetch('/api/info');
+    out.textContent = JSON.stringify(await r.json(), null, 2);
+  } catch (e) { out.textContent = 'error: ' + e.message; }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+async function run() {
+  const btn = document.getElementById('probe-btn');
+  const resultEl = document.getElementById('result');
+  const message = document.getElementById('msg').value;
+
+  btn.disabled = true; btn.textContent = 'running…';
+  resultEl.innerHTML = '<div class="out">running agent loop…</div>';
+
+  try {
+    const r = await fetch('/api/probe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+
+    let html = '';
+    html += '<h2>Final answer (what the model wrote after seeing the tool result)</h2>';
+    html += '<div class="answer">' + escapeHtml(data.finalAnswer) + '</div>';
+    html += '<div style="font-size: 12px; color: #666; margin-bottom: 14px;">' +
+            'Total turns: <strong>' + data.totalTurns + '</strong> · ' +
+            'Total latency: <strong>' + data.totalLatencyMs + 'ms</strong> · ' +
+            'Finish reason: <strong>' + data.finishReason + '</strong>' +
+            '</div>';
+
+    html += '<h2>Turn-by-turn trace</h2>';
+    for (const turn of data.turns) {
+      if (turn.kind === 'llm-call') {
+        const tcCount = (turn.assistant?.tool_calls || []).length;
+        html += '<div class="turn turn-llm">';
+        html += '<div class="turn-head">' +
+          '<span class="badge">turn ' + turn.n + '</span>' +
+          '<span class="badge">LLM call (0G Compute)</span>' +
+          '<span class="badge">' + turn.latencyMs + 'ms</span>' +
+          '<span class="badge">finish: ' + turn.finish_reason + '</span>' +
+          (tcCount > 0 ? '<span class="badge badge-tool">tool_calls: ' + tcCount + '</span>' : '') +
+          '</div>';
+        html += '<div class="turn-body">' + escapeHtml(JSON.stringify(turn.assistant, null, 2)) + '</div>';
+        html += '</div>';
+      } else if (turn.kind === 'tool-dispatch') {
+        html += '<div class="turn turn-tool">';
+        html += '<div class="turn-head">' +
+          '<span class="badge badge-tool">tool dispatch (server.js)</span>' +
+          '<span class="badge">' + turn.tool + '(' + turn.arguments + ')</span>' +
+          '</div>';
+        html += '<div class="turn-body">' +
+          'executedBy: ' + turn.executedBy + '\n\n' +
+          'result: ' + escapeHtml(turn.result) +
+          '</div>';
+        html += '</div>';
+      }
+    }
+
+    resultEl.innerHTML = html;
+  } catch (e) {
+    resultEl.innerHTML = '<div class="answer" style="background:#ffe6e6;border-color:#d97a7a;">error: ' + escapeHtml(e.message) + '</div>';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Send';
+  }
+}
+
+loadInfo();
+</script>
+</body>
+</html>

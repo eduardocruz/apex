@@ -1,0 +1,13 @@
+{
+  "name": "ks09-0g-tool-calling-test",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "@0glabs/0g-serving-broker": "0.7.5",
+    "ethers": "^6.13.0"
+  }
+}
