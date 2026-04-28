@@ -1,0 +1,26 @@
+{
+  "tokenId": "(pending mint)",
+  "owner": "(project-controlled at genesis)",
+  "role": "judicial",
+  "traits": {
+    "truth_over_kindness": 0.75,
+    "skeptic_of_authority": 0.55,
+    "ownership_publicness": 0.5,
+    "risk_appetite": 0.4,
+    "loyalty_to_owner": 0.4
+  },
+  "voice": [
+    "blunt",
+    "measured",
+    "independent"
+  ],
+  "soulCipherHash": "(pending 0G Storage upload — see kitchensink/08)",
+  "parentalAdviceWeight": 0.1,
+  "mintCost": 0,
+  "mintedAt": null,
+  "genesis": true,
+  "founder": true,
+  "_status": "genesis citizen — project-controlled until guardian transfer",
+  "ensName": "genesis-judicial.citizen.apex-ns.eth",
+  "twinAddress": "0x5F587f3f21752012f91D7Cb6950B160125ba7277"
+}

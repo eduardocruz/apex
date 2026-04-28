@@ -155,12 +155,42 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'GET' && (req.url === '/registry' || req.url === '/registry.html')) {
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.end(fs.readFileSync(path.join(__dirname, 'registry.html')));
+      return;
+    }
+
     if (req.method === 'GET' && req.url === '/api/citizens') {
-      const list = fs.existsSync(CITIZENS_DIR)
+      const slugs = fs.existsSync(CITIZENS_DIR)
         ? fs.readdirSync(CITIZENS_DIR).filter(n => !n.startsWith('.') && fs.statSync(path.join(CITIZENS_DIR, n)).isDirectory())
         : [];
+      const citizens = slugs.map(slug => {
+        const dir = path.join(CITIZENS_DIR, slug);
+        try {
+          const id = JSON.parse(fs.readFileSync(path.join(dir, 'agentic-id.json'), 'utf8'));
+          const ledger = JSON.parse(fs.readFileSync(path.join(dir, 'ledger.json'), 'utf8'));
+          return {
+            slug,
+            ens: id.ensName,
+            address: id.twinAddress || id.owner,
+            role: id.role,
+            traits: id.traits,
+            voice: id.voice,
+            parental_advice_weight: id.parentalAdviceWeight,
+            genesis: !!id.genesis,
+            founder: !!id.founder,
+            balance_og: ledger.balance_og ?? 0,
+            actions: ledger.actions?.length ?? 0,
+            minted_at: ledger.minted_at,
+            status: ledger.status,
+          };
+        } catch (e) {
+          return { slug, error: e.message };
+        }
+      });
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ count: list.length, citizens: list, parent: APEX_PARENT_ENS, namestone_configured: !!NAMESTONE_API_KEY }));
+      res.end(JSON.stringify({ count: citizens.length, citizens, parent: APEX_PARENT_ENS, namestone_configured: !!NAMESTONE_API_KEY }, null, 2));
       return;
     }
 

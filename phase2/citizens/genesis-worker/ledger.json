@@ -1,0 +1,9 @@
+{
+  "ens": "genesis-worker.citizen.apex-ns.eth",
+  "role": "worker",
+  "balance_og": 0,
+  "runway_actions": 0,
+  "actions": [],
+  "minted_at": "2026-04-28T15:34:47.675Z",
+  "status": "local-only-mock"
+}

@@ -1,0 +1,9 @@
+{
+  "ens": "genesis-executive.citizen.apex-ns.eth",
+  "role": "executive",
+  "balance_og": 0,
+  "runway_actions": 0,
+  "actions": [],
+  "minted_at": "2026-04-28T15:34:48.988Z",
+  "status": "local-only-mock"
+}
