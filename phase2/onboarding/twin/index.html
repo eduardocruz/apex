@@ -417,7 +417,7 @@ function generateAgenticIdJson() {
   return {
     tokenId: "(pending mint)",
     owner: "(pending wallet connect)",
-    ensName: state.ensName ? `${state.ensName}.apex-ns.eth` : "(unset)",
+    ensName: state.ensName ? `${state.ensName}.citizen.apex-ns.eth` : "(unset)",
     role: state.role.id,
     traits: generateTraitsJson(),
     voice: deriveVoice(state.traits),

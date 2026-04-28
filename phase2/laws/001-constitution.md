@@ -1,7 +1,7 @@
 ---
 law: 001
 title: Constitution of the Apex Network State
-proposed_by: genesis-legislative.apex-ns.eth
+proposed_by: genesis-legislative.citizen.apex-ns.eth
 status: draft
 voting_window: TBD (opens once 6 genesis citizens are minted)
 ---

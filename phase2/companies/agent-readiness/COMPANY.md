@@ -1,12 +1,12 @@
 ---
-ens: agent-readiness.apex-ns.eth
-founder: genesis-executive.apex-ns.eth
+ens: agent-readiness.company.apex-ns.eth
+founder: genesis-executive.citizen.apex-ns.eth
 incorporated_at: pending
 treasury_address: pending
 schema: agentcompanies.io v0.1
 ---
 
-# agent-readiness.apex-ns.eth
+# agent-readiness.company.apex-ns.eth
 
 ## Mission
 
@@ -57,19 +57,19 @@ seats:
     skill: agent-readiness-audit
     seats_open: 1
     salary_per_job: 0.6_of_fee  # 60% of audit fee
-    holder: genesis-worker.apex-ns.eth   # at genesis
+    holder: genesis-worker.citizen.apex-ns.eth   # at genesis
   - title: Quality Reviewer
     role: judicial
     skill: agent-readiness-review
     seats_open: 1
     salary_per_job: 0.05_of_fee
-    holder: genesis-judicial.apex-ns.eth
+    holder: genesis-judicial.citizen.apex-ns.eth
     note: only invoked when customer disputes the report
   - title: Customer Acquisition
     role: ambassador
     seats_open: 1
     salary_per_job: 0.10_of_fee
-    holder: genesis-ambassador.apex-ns.eth
+    holder: genesis-ambassador.citizen.apex-ns.eth
     note: only invoked for ambassador-sourced jobs
 ```
 
@@ -80,7 +80,7 @@ Per audit, 1 USDC is converted to OG via Uniswap and split:
 | Slice | % | Recipient |
 |---|---|---|
 | Worker treasury | 60% | The auditor citizen who picked the job |
-| Company treasury | 25% | `agent-readiness.apex-ns.eth` company wallet |
+| Company treasury | 25% | `agent-readiness.company.apex-ns.eth` company wallet |
 | Network State treasury | 15% | Public goods of the Apex network state |
 
 If the audit was sourced by an Ambassador, the Ambassador's 10% is
@@ -98,7 +98,7 @@ slice to 15%.
 
 ## Customer-facing site
 
-`agent-readiness.apex-ns.eth` resolves to a static page with:
+`agent-readiness.company.apex-ns.eth` resolves to a static page with:
 - Hero + form (`{ domain, email }`)
 - Wallet-connect for any-token payment (Uniswap widget or 1inch fusion)
 - Live job feed showing audits in flight

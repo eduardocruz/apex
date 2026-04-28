@@ -19,19 +19,19 @@ The **load-bearing product** is autonomous companies — real businesses run by 
 
 ### Flagship company — the one we actually ship
 
-> **`agent-readiness.apex-ns.eth`** — "We audit your domain for agent readiness. Are AI agents able to crawl, parse, and act on your site? `robots.txt` for AI bots, `llms.txt` presence, structured data quality, render-without-JS, response time on agent user-agents, content negotiation, error pages. $1 USDC per audit. Delivery in <5 minutes."
+> **`agent-readiness.company.apex-ns.eth`** — "We audit your domain for agent readiness. Are AI agents able to crawl, parse, and act on your site? `robots.txt` for AI bots, `llms.txt` presence, structured data quality, render-without-JS, response time on agent user-agents, content negotiation, error pages. $1 USDC per audit. Delivery in <5 minutes."
 
 Inspiration: Cloudflare's [agent readiness post](https://blog.cloudflare.com/agent-readiness/) and [isitagentready.com](http://isitagentready.com/) — exact same problem, framed as an autonomous-agent service rather than a Cloudflare-hosted tool.
 
 **Customer flow (the part judges see):**
 
 ```
-1. Customer lands on agent-readiness.apex-ns.eth
+1. Customer lands on agent-readiness.company.apex-ns.eth
 2. Form: { domain, contact_email }
 3. Pay $1 in any token (USDC, USDT, ETH, …) → Uniswap swaps to OG
 4. Job posted to the citizen pool, tagged skill: agent-readiness-audit
 5. A Worker citizen with that skill picks the job
-   (e.g. eduardocruz.apex-ns.eth — your minted twin)
+   (e.g. eduardocruz.citizen.apex-ns.eth — your minted twin)
 6. Worker fetches the domain with multiple agent UAs, runs checks via
    tool-calls (the 0G Compute pattern from kitchensink/09):
      - get_robots_txt(domain)
@@ -83,12 +83,12 @@ A network state without legitimate office-holders is a hostile environment. If t
 
 | Slot | ENS | Role | Why this seat must be filled at genesis |
 |---|---|---|---|
-| 1 | `genesis-worker.apex-ns.eth` | Worker | First job-pickup so the audit market isn't empty on Day 1 |
-| 2 | `genesis-judicial.apex-ns.eth` | Judicial | First arbiter for any disputed audit |
-| 3 | `genesis-executive.apex-ns.eth` | Executive | Founder-of-record for `agent-readiness.apex-ns.eth` |
-| 4 | `genesis-legislative.apex-ns.eth` | Legislative | Drafts the constitution as Law #001; without it, the seat is exploit surface |
-| 5 | `genesis-ambassador.apex-ns.eth` | Ambassador | Initial customer-acquisition loop |
-| 6 | `genesis-outsider.apex-ns.eth` | Outsider | Required adversarial role — pressure-tests rules |
+| 1 | `genesis-worker.citizen.apex-ns.eth` | Worker | First job-pickup so the audit market isn't empty on Day 1 |
+| 2 | `genesis-judicial.citizen.apex-ns.eth` | Judicial | First arbiter for any disputed audit |
+| 3 | `genesis-executive.citizen.apex-ns.eth` | Executive | Founder-of-record for `agent-readiness.company.apex-ns.eth` |
+| 4 | `genesis-legislative.citizen.apex-ns.eth` | Legislative | Drafts the constitution as Law #001; without it, the seat is exploit surface |
+| 5 | `genesis-ambassador.citizen.apex-ns.eth` | Ambassador | Initial customer-acquisition loop |
+| 6 | `genesis-outsider.citizen.apex-ns.eth` | Outsider | Required adversarial role — pressure-tests rules |
 
 **Law #001 — the Constitution.** First act of `genesis-legislative` is to propose `phase2/laws/001-constitution.md`, open to vote by all citizens (genesis + minted) for a fixed window. It encodes:
 - Treasury split (60/25/15 default, amendable by ⅔ vote)
@@ -134,7 +134,7 @@ Digital Twin RPG combines: identity exploration + RPG progression + tamagotchi s
 | **0G Compute** | Brain of each twin (qwen-2.5-7b via broker) | LLM with auditable ID + on-chain cost accounting |
 | **0G Storage** | Twin memory + corpus + judicial rulings | Content-addressed, immutable, citable by hash |
 | **ERC-7857 (0G AgenticID)** | Encrypted identity of the twin | Privacy of `SOUL.md` + portability — a twin can change owners and its memory travels re-encrypted |
-| **ENS** | Public passport (`name.apex-ns.eth`) | Public role, status, trait scores. Discovery + verification |
+| **ENS** | Public passport (`<name>.citizen.apex-ns.eth` + `<name>.company.apex-ns.eth`) | Public role, status, trait scores. Discovery + verification |
 | **Gensyn AXL** | Twins talk to each other and to humans | No broker = no central state authority (ideologically aligned with the network-state thesis) |
 | **KeeperHub** | Heartbeat tax cron + election scheduling | Temporal substrate — without it, "metabolism" and "constitution" don't run |
 | **Uniswap** | Any-token payments → OG | Zero friction for judges paying with USDC, USDT, etc. Twin receives in OG. |
@@ -208,7 +208,7 @@ Step 4 — Influence (set once, lives forever)
   Advisories are 255-char max; cadence is hourly during demo, daily in production.
 
 Step 5 — Watch (immediate)
-  Twin appears in the registry at name.apex-ns.eth.
+  Twin appears in the registry at <name>.citizen.apex-ns.eth.
   Stats: balance / runway / role / 5 trait sliders / 0 actions.
   First job assignment within 30s if Worker; first dispute draw within 1h if Judicial.
 ```
@@ -366,16 +366,16 @@ Each day ends with one **deliverable a stranger could see** — a working URL, a
       8 questions, 30 seconds.
       → SOUL: "decisive, blunt, slightly contrarian"
       → ROLE: Founder Citizen (frozen until Law #001 ratifies)
-      → marc-twin.apex-ns.eth resolves on app.ens.domains
+      → marc-twin.citizen.apex-ns.eth resolves on app.ens.domains
       Marc casts his constitutional vote — yea on Article II §3.
 
 0:38  [COMPANY PATH — flagship in action]
-      "agent-readiness.apex-ns.eth, the project's flagship company,
+      "agent-readiness.company.apex-ns.eth, the project's flagship company,
        has been incorporated since genesis."
       A second judge enters their domain on the customer site:
         Domain: example.com
       Pays $1 in USDC. Uniswap swaps to OG mid-flight.
-      Job posted. eduardocruz.apex-ns.eth (Worker, with the
+      Job posted. eduardocruz.citizen.apex-ns.eth (Worker, with the
       agent-readiness-audit skill) picks it up.
 
 0:55  [audit running — split screen with terminal]
@@ -387,8 +387,8 @@ Each day ends with one **deliverable a stranger could see** — a working URL, a
 
 1:10  [treasury split — KeeperHub cron]
       $1 audit fee splits 60/25/15:
-        Worker (eduardocruz.apex-ns.eth): +0.6 OG
-        Company (agent-readiness.apex-ns.eth): +0.25 OG
+        Worker (eduardocruz.citizen.apex-ns.eth): +0.6 OG
+        Company (agent-readiness.company.apex-ns.eth): +0.25 OG
         Network State treasury: +0.15 OG
       Live counters tick up.
 

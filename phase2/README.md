@@ -25,7 +25,7 @@ phase2/
 | Day | Deliverable | Status |
 |---|---|---|
 | 1 | Twin onboarding form | ✅ Done |
-| 2 | ENS subnames via Namestone (`*.apex-ns.eth`) + per-twin wallet | ✅ Done |
+| 2 | ENS subnames via Namestone (`*.citizen.apex-ns.eth`) + per-twin wallet | ✅ Done |
 | 3 | SOUL.md encrypted client-side + uploaded to 0G Storage | ⏳ Blocked on testnet flow contract |
 | 4 | Company incorporation form + 6 genesis citizens | Next |
 | 5 | Worker SKILL.md + agent-readiness audit live | |
@@ -46,11 +46,11 @@ node server.js
 
 The form generates a SOUL.md, picks a role, mints a per-twin Ethereum
 wallet, persists 6 files to `citizens/<slug>/`, and registers
-`<slug>.apex-ns.eth` via Namestone (off-chain ENS subname, free, ENS
+`<slug>.citizen.apex-ns.eth` via Namestone (off-chain ENS subname, free, ENS
 sponsor partner).
 
 Forward resolution verified via public ENS resolvers — e.g.
-[`eduardocruz.apex-ns.eth`](https://api.ensideas.com/ens/resolve/eduardocruz.apex-ns.eth)
+[`eduardocruz.citizen.apex-ns.eth`](https://api.ensideas.com/ens/resolve/eduardocruz.citizen.apex-ns.eth)
 points to `0x7fad72E0F1f92fa281aAC39E0e64554d406556Ac`.
 
 ## Flagship company
@@ -63,5 +63,5 @@ treasury split 60/25/15.
 ## Constitution
 
 `laws/001-constitution.md` — Law #001, drafted as the first act of
-`genesis-legislative.apex-ns.eth`, open to vote by all citizens once
+`genesis-legislative.citizen.apex-ns.eth`, open to vote by all citizens once
 the 6 genesis citizens are minted.

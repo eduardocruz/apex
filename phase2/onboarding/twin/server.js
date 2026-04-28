@@ -6,7 +6,7 @@
 //      ERC-7857 mint instead).
 //   2. Write SOUL.md, ROLE.md, traits.json, agentic-id.json, ledger.json,
 //      wallet.json to citizens/<slug>/.
-//   3. Register `<slug>.apex-ns.eth` via Namestone (off-chain ENS subname,
+//   3. Register `<slug>.citizen.apex-ns.eth` via Namestone (off-chain ENS subname,
 //      ENS sponsor partner, free). Text records: role, traits, voice,
 //      parental_advice_weight, soul_status. Address: the twin's wallet.
 
@@ -31,6 +31,10 @@ if (fs.existsSync(envPath)) {
 
 const NAMESTONE_API_KEY = process.env.NAMESTONE_API_KEY || '';
 const APEX_PARENT_ENS = process.env.APEX_PARENT_ENS || 'apex-ns.eth';
+// Citizens live under <slug>.citizen.<parent>; companies under <slug>.company.<parent>.
+// Singular reads as a qualifier on a unique address. Directory layout stays plural
+// (phase2/citizens/, phase2/companies/) because directories hold collections.
+const CITIZEN_NAMESPACE = 'citizen';
 const NAMESTONE_ENDPOINT = 'https://namestone.com/api/public_v1/set-name';
 
 function readBody(req) {
@@ -54,7 +58,7 @@ async function registerSubname({ slug, address, role, traits, voice, parentalAdv
   }
   const body = {
     domain: APEX_PARENT_ENS,
-    name: slug,
+    name: `${slug}.${CITIZEN_NAMESPACE}`,
     address,
     text_records: {
       'apex.role': role,
@@ -74,7 +78,7 @@ async function registerSubname({ slug, address, role, traits, voice, parentalAdv
     const text = await r.text();
     let json; try { json = JSON.parse(text); } catch { json = { raw: text }; }
     if (!r.ok) return { ok: false, status: r.status, response: json };
-    return { ok: true, status: r.status, response: json, fullName: `${slug}.${APEX_PARENT_ENS}` };
+    return { ok: true, status: r.status, response: json, fullName: `${slug}.${CITIZEN_NAMESPACE}.${APEX_PARENT_ENS}` };
   } catch (e) {
     return { ok: false, error: e.message };
   }
@@ -99,7 +103,7 @@ async function safeMint(payload) {
   const twinAddress = wallet.address;
 
   // 2. Update agentic-id.json with real address + parent ens
-  const fullEns = `${slug}.${APEX_PARENT_ENS}`;
+  const fullEns = `${slug}.${CITIZEN_NAMESPACE}.${APEX_PARENT_ENS}`;
   const idDoc = {
     ...agenticIdJson,
     ensName: fullEns,

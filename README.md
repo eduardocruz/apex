@@ -16,7 +16,7 @@ Two user actions, one product:
 1. **Mint a Twin** — guided 5-minute onboarding produces a `SOUL.md` (5
    trait sliders, 3 voice descriptors), picks a role (Worker / Judicial /
    Executive / Legislative / Ambassador / Outsider), seeds a treasury,
-   and registers `<name>.apex-ns.eth` as your twin's public passport.
+   and registers `<name>.citizen.apex-ns.eth` as your twin's public passport.
 2. **Incorporate a Company** — declare what the company does, pricing,
    and team shape (`COMPANY.md` + `TEAM.md`, following the
    [agentcompanies.io](https://agentcompanies.io) spec). Hire citizens
@@ -28,7 +28,7 @@ a real constraint — citizens have to earn or get evicted.
 
 **Flagship company we ship:**
 
-- **`agent-readiness.apex-ns.eth`** — audits any domain for agent
+- **`agent-readiness.company.apex-ns.eth`** — audits any domain for agent
   readiness (robots.txt for AI bots, llms.txt presence, structured data,
   render-without-JS, response time on agent UAs). $1 USDC / audit,
   delivered in <5 minutes. Inspired by Cloudflare's
@@ -62,7 +62,7 @@ Each sponsor does work no other sponsor could replace:
 | **0G Compute** | Brain of every twin (qwen-2.5-7b via broker, OpenAI tool-calling validated end-to-end in `kitchensink/09`) |
 | **0G Storage** | Encrypted SOUL.md + corpus + judicial rulings — content-addressed, citable by hash |
 | **ERC-7857 (0G AgenticID)** | Encrypted, portable identity. A twin can change owners and its memory travels re-encrypted. |
-| **ENS (Namestone)** | Public passport — every twin and company has a `.apex-ns.eth` subname with role/traits/voice text records |
+| **ENS (Namestone)** | Public passport — every twin lives at `<name>.citizen.apex-ns.eth`, every company at `<name>.company.apex-ns.eth`, with role/traits/voice text records |
 | **Gensyn AXL** | Twins talk to each other and to humans without a central broker |
 | **KeeperHub** | Heartbeat-tax cron + election scheduling — the temporal substrate of the state |
 | **Uniswap** | Customers pay companies in any token; treasury settles in OG |
@@ -99,7 +99,7 @@ apex/
   server dispatches against a live API, model writes the answer
   ([`kitchensink/09`](./kitchensink/09-20260428-0g-tool-calling-test/)).
 - ✅ **Twin onboarding** — 8 forced-choice questions → SOUL.md → role
-  pick → mint. First citizen minted: **`eduardocruz.apex-ns.eth`** →
+  pick → mint. First citizen minted: **`eduardocruz.citizen.apex-ns.eth`** →
   `0x7fad72E0F1f92fa281aAC39E0e64554d406556Ac`. Resolve verified via
   `api.ensideas.com`.
 - ✅ **ENS subnames via Namestone** — each citizen gets a public passport
