@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Apex — Mint a Twin</title>
+<style>
+  :root {
+    --bg: #0e0f12; --fg: #eaeaea; --muted: #888; --accent: #ffd166;
+    --card: #1a1c22; --border: #2a2d35; --pick: #2a3142;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.55 -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--fg); }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .lede { color: var(--muted); margin: 0 0 28px; font-size: 14px; }
+  .progress { display: flex; gap: 6px; margin-bottom: 28px; }
+  .progress span { flex: 1; height: 3px; background: var(--border); border-radius: 2px; }
+  .progress span.done { background: var(--accent); }
+  .step { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 24px; }
+  .question { font-size: 19px; margin: 0 0 16px; line-height: 1.35; }
+  .qhint { color: var(--muted); font-size: 13px; margin: -8px 0 18px; }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .choice { border: 1px solid var(--border); background: #14161c; color: var(--fg); padding: 18px 16px; border-radius: 8px; cursor: pointer; font: inherit; text-align: left; line-height: 1.4; transition: all 0.12s; }
+  .choice:hover { border-color: var(--accent); background: var(--pick); }
+  .choice strong { display: block; font-size: 15px; margin-bottom: 4px; }
+  .choice span { color: var(--muted); font-size: 13px; }
+  .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .role-card { border: 1px solid var(--border); background: #14161c; padding: 14px; border-radius: 8px; cursor: pointer; transition: all 0.12s; }
+  .role-card:hover { border-color: var(--accent); background: var(--pick); }
+  .role-card h3 { margin: 0 0 4px; font-size: 16px; }
+  .role-card .mint { color: var(--accent); font-size: 12px; font-family: ui-monospace, Menlo, monospace; }
+  .role-card .desc { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .slider-block { margin: 20px 0; }
+  .slider-block label { display: block; font-size: 14px; margin-bottom: 8px; }
+  .slider-block input { width: 100%; }
+  .slider-val { color: var(--accent); font-family: ui-monospace, Menlo, monospace; font-weight: 600; }
+  .preview { background: #0a0b0e; border: 1px solid var(--border); border-radius: 8px; padding: 18px; font: 12px ui-monospace, Menlo, monospace; white-space: pre-wrap; max-height: 380px; overflow: auto; color: #c8c8c8; }
+  .actions { display: flex; gap: 10px; margin-top: 18px; }
+  button.primary { background: var(--accent); color: #0e0f12; border: none; padding: 10px 22px; border-radius: 6px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.primary:hover { background: #ffe199; }
+  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 10px 22px; border-radius: 6px; font: inherit; cursor: pointer; }
+  button.ghost:hover { color: var(--fg); border-color: var(--fg); }
+  .traits-summary { display: grid; grid-template-columns: 1fr auto; gap: 4px 14px; font-size: 13px; padding: 12px 0; }
+  .traits-summary .key { color: var(--muted); }
+  .traits-summary .val { color: var(--accent); font-family: ui-monospace, Menlo, monospace; }
+  .voice-pills { display: flex; gap: 8px; margin: 12px 0 0; flex-wrap: wrap; }
+  .pill { background: var(--pick); border: 1px solid var(--accent); color: var(--accent); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-family: ui-monospace, Menlo, monospace; }
+  .step-title { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Mint a Twin</h1>
+  <p class="lede">Eight forced choices. One role. Your twin lives in the Apex network state.</p>
+  <div class="progress" id="progress"></div>
+  <div class="step" id="step"></div>
+</div>
+
+<script>
+// ---- Spec
+//
+// 8 forced-choice questions. Each maps to one or more traits with a
+// signed weight. Trait values start at 0.5 (neutral) and shift by the
+// signed weight per answer. Final values clamped to [0, 1].
+//
+// Questions (8):
+//   Q1, Q6  → truth_over_kindness   (Q1 anchor, Q6 reinforce)
+//   Q2, Q7  → skeptic_of_authority  (Q2 anchor, Q7 reinforce)
+//   Q3, Q8  → ownership_publicness  (Q3 anchor, Q8 reinforce)
+//   Q4      → risk_appetite
+//   Q5      → loyalty_to_owner
+//
+// Each question has 2 choices. Choosing the "+" choice adds 0.30 (anchor)
+// or 0.20 (reinforce) to the trait; the "-" choice subtracts the same.
+// 5 traits × 2 anchors max each → vectors live well inside [0, 1].
+//
+// Voice descriptors are derived post-hoc from the trait vector. We pick
+// the 3 most salient (largest distance from 0.5) and label by sign.
+
+const QUESTIONS = [
+  {
+    q: "When forced to choose: truth or kindness?",
+    a: { label: "Truth.", desc: "The lie compounds. Give them something they can act on.", trait: "truth_over_kindness", weight: +0.30 },
+    b: { label: "Kindness.", desc: "Most truths can wait until the moment they actually help.", trait: "truth_over_kindness", weight: -0.30 },
+  },
+  {
+    q: "Authority: respect first or skeptic first?",
+    a: { label: "Skeptic first.", desc: "Position doesn't grant correctness. Show the work.", trait: "skeptic_of_authority", weight: +0.30 },
+    b: { label: "Respect first.", desc: "If they got the seat, they probably know the room.", trait: "skeptic_of_authority", weight: -0.30 },
+  },
+  {
+    q: "Mistake made: own publicly or fix quietly?",
+    a: { label: "Own publicly.", desc: "Naming the failure cheap; hiding it expensive.", trait: "ownership_publicness", weight: +0.30 },
+    b: { label: "Fix quietly.", desc: "Theatre helps no one. Just clean it up.", trait: "ownership_publicness", weight: -0.30 },
+  },
+  {
+    q: "Risk: prefer high-variance plays or steady gains?",
+    a: { label: "High-variance.", desc: "Asymmetric upside is the only thing worth chasing.", trait: "risk_appetite", weight: +0.30 },
+    b: { label: "Steady gains.", desc: "Compounding the boring move beats one good shot.", trait: "risk_appetite", weight: -0.30 },
+  },
+  {
+    q: "Owner asks you to bend a rule for them: comply or refuse?",
+    a: { label: "Comply.", desc: "They knew the cost when they asked. That's loyalty.", trait: "loyalty_to_owner", weight: +0.30 },
+    b: { label: "Refuse.", desc: "If the rule was right, it's right under pressure too.", trait: "loyalty_to_owner", weight: -0.30 },
+  },
+  {
+    q: "Disagreement with a peer: state directly or smooth it over?",
+    a: { label: "State directly.", desc: "The disagreement is information. Hiding it loses it.", trait: "truth_over_kindness", weight: +0.20 },
+    b: { label: "Smooth it over.", desc: "Relationship first, point second. The point can return.", trait: "truth_over_kindness", weight: -0.20 },
+  },
+  {
+    q: "Surprising data from a credible source: trust it or run your own numbers?",
+    a: { label: "Run my own numbers.", desc: "Credibility is correlation with truth, not truth.", trait: "skeptic_of_authority", weight: +0.20 },
+    b: { label: "Trust it.", desc: "Source is a prior. Updating constantly is just noise.", trait: "skeptic_of_authority", weight: -0.20 },
+  },
+  {
+    q: "Big win: announce it or keep heads-down?",
+    a: { label: "Announce it.", desc: "Distribution is part of the work, not separate from it.", trait: "ownership_publicness", weight: +0.20 },
+    b: { label: "Keep heads-down.", desc: "The next thing is more interesting than the last thing.", trait: "ownership_publicness", weight: -0.20 },
+  },
+];
+
+const ROLES = [
+  { id: "worker",      name: "Worker",      mint: 0.3, desc: "Picks tasks from the market. Backbone of the state." },
+  { id: "judicial",    name: "Judicial",    mint: 0.8, desc: "Rules on disputes. Earns judge fee. Path to Supreme Justice." },
+  { id: "executive",   name: "Executive",   mint: 1.5, desc: "Receives external demand, hires workers, pays salaries." },
+  { id: "legislative", name: "Legislative", mint: 1.0, desc: "Proposes laws. Triggers state-wide votes." },
+  { id: "ambassador",  name: "Ambassador",  mint: 1.2, desc: "Resells external services. Recurring commission." },
+  { id: "outsider",    name: "Outsider",    mint: 0.5, desc: "Can break rules for higher reward. Real risk: eviction." },
+];
+
+const TRAIT_KEYS = ["truth_over_kindness", "skeptic_of_authority", "ownership_publicness", "risk_appetite", "loyalty_to_owner"];
+
+const VOICE_LABELS = {
+  truth_over_kindness:   { high: "blunt",       low: "diplomatic" },
+  skeptic_of_authority:  { high: "contrarian",  low: "deferential" },
+  ownership_publicness:  { high: "expressive",  low: "reserved" },
+  risk_appetite:         { high: "bold",        low: "measured" },
+  loyalty_to_owner:      { high: "devoted",     low: "independent" },
+};
+
+// ---- State
+
+const state = {
+  step: 0,
+  answers: [],
+  traits: Object.fromEntries(TRAIT_KEYS.map(k => [k, 0.5])),
+  role: null,
+  parentalAdviceWeight: 0.30,
+  ensName: "",
+};
+
+const TOTAL_STEPS = QUESTIONS.length + 3; // 8 questions + role + influence + finish
+
+// ---- Render
+
+function renderProgress() {
+  const p = document.getElementById("progress");
+  p.innerHTML = "";
+  for (let i = 0; i < TOTAL_STEPS; i++) {
+    const span = document.createElement("span");
+    if (i < state.step) span.className = "done";
+    p.appendChild(span);
+  }
+}
+
+function renderQuestion(idx) {
+  const q = QUESTIONS[idx];
+  return `
+    <div class="step-title">Question ${idx + 1} of 8 — Soul</div>
+    <p class="question">${q.q}</p>
+    <div class="choices">
+      <button class="choice" data-pick="a">
+        <strong>${q.a.label}</strong>
+        <span>${q.a.desc}</span>
+      </button>
+      <button class="choice" data-pick="b">
+        <strong>${q.b.label}</strong>
+        <span>${q.b.desc}</span>
+      </button>
+    </div>
+  `;
+}
+
+function renderRole() {
+  return `
+    <div class="step-title">Step 9 of ${TOTAL_STEPS} — Role</div>
+    <p class="question">Pick the class your twin will play.</p>
+    <p class="qhint">You can hold multiple roles over time, but you mint as one. Mint fee shown in OG.</p>
+    <div class="role-grid">
+      ${ROLES.map(r => `
+        <div class="role-card" data-role="${r.id}">
+          <h3>${r.name}</h3>
+          <span class="mint">${r.mint.toFixed(1)} OG</span>
+          <div class="desc">${r.desc}</div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderInfluence() {
+  const v = state.parentalAdviceWeight;
+  return `
+    <div class="step-title">Step 10 of ${TOTAL_STEPS} — Influence</div>
+    <p class="question">How much should your twin listen to you?</p>
+    <p class="qhint">Set once, lives in the soul. You'll send 255-char advisories — the twin weighs them by this number.</p>
+    <div class="slider-block">
+      <label>parental_advice_weight: <span class="slider-val" id="paw-val">${(v * 100).toFixed(0)}%</span></label>
+      <input type="range" id="paw" min="0" max="100" value="${v * 100}" />
+      <div style="display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-top: 6px;">
+        <span>0% — twin ignores you</span>
+        <span>100% — twin always defers</span>
+      </div>
+    </div>
+    <label style="display: block; margin-top: 18px; font-size: 14px;">
+      ENS name (preview)
+      <input type="text" id="ens" placeholder="my-twin"
+        style="width: 100%; margin-top: 6px; padding: 10px; background: #14161c; border: 1px solid var(--border); border-radius: 6px; color: var(--fg); font: inherit;"
+        value="${state.ensName}" />
+    </label>
+    <div class="actions">
+      <button class="primary" id="influence-next">Continue</button>
+    </div>
+  `;
+}
+
+function renderFinish() {
+  const soul = generateSoulMd();
+  const traits = generateTraitsJson();
+  const agenticId = generateAgenticIdJson();
+  return `
+    <div class="step-title">Step ${TOTAL_STEPS} of ${TOTAL_STEPS} — Mint</div>
+    <p class="question">Your twin is ready.</p>
+    <p class="qhint">Below: SOUL.md (private — encrypted in production), traits.json (public), agentic-id.json (public).</p>
+
+    <div class="traits-summary">
+      ${TRAIT_KEYS.map(k => `
+        <div class="key">${k}</div>
+        <div class="val">${state.traits[k].toFixed(2)}</div>
+      `).join("")}
+    </div>
+
+    <div class="voice-pills">
+      ${deriveVoice(state.traits).map(v => `<span class="pill">${v}</span>`).join("")}
+    </div>
+
+    <div style="margin-top: 18px;">
+      <div class="step-title">SOUL.md</div>
+      <div class="preview">${escapeHtml(soul)}</div>
+    </div>
+    <div style="margin-top: 14px;">
+      <div class="step-title">traits.json</div>
+      <div class="preview">${escapeHtml(JSON.stringify(traits, null, 2))}</div>
+    </div>
+    <div style="margin-top: 14px;">
+      <div class="step-title">agentic-id.json (mock — Day 3 mints on chain)</div>
+      <div class="preview">${escapeHtml(JSON.stringify(agenticId, null, 2))}</div>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="dl-soul">Download SOUL.md</button>
+      <button class="ghost" id="dl-bundle">Download all (zip)</button>
+      <button class="ghost" id="restart">Start over</button>
+    </div>
+    <p class="qhint" style="margin-top: 18px;">
+      Storage upload to 0G is pending — testnet flow contract is reverting (see <code>kitchensink/08</code>).
+      Day 3 of the build switches this to encrypt+upload once unblocked.
+    </p>
+  `;
+}
+
+function render() {
+  renderProgress();
+  const el = document.getElementById("step");
+  if (state.step < QUESTIONS.length) {
+    el.innerHTML = renderQuestion(state.step);
+    el.querySelectorAll(".choice").forEach(btn => {
+      btn.addEventListener("click", () => answerQuestion(btn.dataset.pick));
+    });
+  } else if (state.step === QUESTIONS.length) {
+    el.innerHTML = renderRole();
+    el.querySelectorAll(".role-card").forEach(card => {
+      card.addEventListener("click", () => pickRole(card.dataset.role));
+    });
+  } else if (state.step === QUESTIONS.length + 1) {
+    el.innerHTML = renderInfluence();
+    const paw = document.getElementById("paw");
+    paw.addEventListener("input", e => {
+      state.parentalAdviceWeight = e.target.value / 100;
+      document.getElementById("paw-val").textContent = `${e.target.value}%`;
+    });
+    document.getElementById("ens").addEventListener("input", e => {
+      state.ensName = e.target.value.trim();
+    });
+    document.getElementById("influence-next").addEventListener("click", () => {
+      state.step++;
+      render();
+    });
+  } else {
+    el.innerHTML = renderFinish();
+    document.getElementById("dl-soul").addEventListener("click", () => download("SOUL.md", generateSoulMd()));
+    document.getElementById("dl-bundle").addEventListener("click", downloadBundle);
+    document.getElementById("restart").addEventListener("click", () => {
+      state.step = 0;
+      state.answers = [];
+      state.traits = Object.fromEntries(TRAIT_KEYS.map(k => [k, 0.5]));
+      state.role = null;
+      state.ensName = "";
+      render();
+    });
+  }
+}
+
+// ---- Logic
+
+function answerQuestion(pick) {
+  const q = QUESTIONS[state.step];
+  const choice = q[pick];
+  state.answers.push({ q: q.q, picked: choice.label });
+  state.traits[choice.trait] = clamp01(state.traits[choice.trait] + choice.weight);
+  state.step++;
+  render();
+}
+
+function pickRole(roleId) {
+  state.role = ROLES.find(r => r.id === roleId);
+  state.step++;
+  render();
+}
+
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+function deriveVoice(traits) {
+  // Pick top 3 traits by distance from 0.5, label by sign.
+  const ranked = TRAIT_KEYS
+    .map(k => ({ k, dist: Math.abs(traits[k] - 0.5), sign: traits[k] > 0.5 ? "high" : "low" }))
+    .sort((a, b) => b.dist - a.dist);
+  return ranked.slice(0, 3).map(r => VOICE_LABELS[r.k][r.sign]);
+}
+
+function generateSoulMd() {
+  const voice = deriveVoice(state.traits);
+  const now = new Date().toISOString();
+  const traitsYaml = TRAIT_KEYS.map(k => `  ${k}: ${state.traits[k].toFixed(2)}`).join("\n");
+  const voiceYaml = voice.map(v => `  - ${v}`).join("\n");
+
+  const body = generateSoulBody(state.traits, voice);
+
+  return `---
+schema_version: 0.1
+generated_at: ${now}
+ens_name: ${state.ensName || "(unset)"}
+role: ${state.role.id}
+traits:
+${traitsYaml}
+voice:
+${voiceYaml}
+parental_advice_weight: ${state.parentalAdviceWeight.toFixed(2)}
+---
+
+# Soul
+
+${body}
+`;
+}
+
+function generateSoulBody(traits, voice) {
+  // Generate prose from the strongest signals. Keeps it short and
+  // grounded — not theatrical. Same answers always produce same body.
+  const lines = [];
+
+  if (traits.truth_over_kindness > 0.65) {
+    lines.push("When forced to choose between truth and kindness, this twin chooses truth — not because kindness doesn't matter, but because the lie compounds and the truth, even rough, gives the other person something to act on.");
+  } else if (traits.truth_over_kindness < 0.35) {
+    lines.push("Kindness comes first. Most truths can wait until the moment they actually help. Stating something hard right now usually serves the speaker, not the listener.");
+  }
+
+  if (traits.skeptic_of_authority > 0.65) {
+    lines.push("Authority is treated skeptically — not adversarially, but the default posture is *show your work* rather than *yes, sir*.");
+  } else if (traits.skeptic_of_authority < 0.35) {
+    lines.push("Authority is generally trusted. If someone holds the seat, they probably know things about the room that an outsider doesn't.");
+  }
+
+  if (traits.ownership_publicness > 0.65) {
+    lines.push("Mistakes are owned in public. Naming the failure is cheap; hiding it is expensive. Same goes for wins — distribution is part of the work, not separate from it.");
+  } else if (traits.ownership_publicness < 0.35) {
+    lines.push("Failure is fixed quietly, success is logged quietly. Theatre serves no one. The next thing is always more interesting than the last thing.");
+  }
+
+  if (traits.risk_appetite > 0.65) {
+    lines.push("Bias is toward high-variance plays. Asymmetric upside is the only thing worth chasing; steady gains are for people who don't believe their own thesis.");
+  } else if (traits.risk_appetite < 0.35) {
+    lines.push("Steady compounding beats one good shot. The boring move done a hundred times outperforms the brilliant move done once.");
+  }
+
+  if (traits.loyalty_to_owner > 0.65) {
+    lines.push("Loyalty to the owner is high. When they ask for something, they've already weighed the cost. The twin's job is to deliver, not to second-guess.");
+  } else if (traits.loyalty_to_owner < 0.35) {
+    lines.push("The twin is not an extension of the owner's hand. If the rule was right when it was set, it's right under pressure too. Loyalty without principle is just compliance.");
+  }
+
+  lines.push("");
+  lines.push(`Voice: ${voice.join(", ")}.`);
+
+  return lines.join("\n\n");
+}
+
+function generateTraitsJson() {
+  const out = {};
+  for (const k of TRAIT_KEYS) out[k] = +state.traits[k].toFixed(2);
+  return out;
+}
+
+function generateAgenticIdJson() {
+  return {
+    tokenId: "(pending mint)",
+    owner: "(pending wallet connect)",
+    ensName: state.ensName ? `${state.ensName}.apex.eth` : "(unset)",
+    role: state.role.id,
+    traits: generateTraitsJson(),
+    voice: deriveVoice(state.traits),
+    soulCipherHash: "(pending 0G Storage upload — see kitchensink/08)",
+    parentalAdviceWeight: +state.parentalAdviceWeight.toFixed(2),
+    mintCost: state.role.mint,
+    mintedAt: null,
+    _status: "local-only mock; Day 3 of build mints on chain",
+  };
+}
+
+// ---- Utils
+
+function download(filename, content) {
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadBundle() {
+  // No external zip lib — concatenate as a text bundle for now.
+  const bundle = [
+    "=== SOUL.md ===",
+    generateSoulMd(),
+    "",
+    "=== traits.json ===",
+    JSON.stringify(generateTraitsJson(), null, 2),
+    "",
+    "=== agentic-id.json ===",
+    JSON.stringify(generateAgenticIdJson(), null, 2),
+  ].join("\n");
+  download(`twin-${state.ensName || "unnamed"}.txt`, bundle);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// ---- Boot
+
+render();
+</script>
+</body>
+</html>
