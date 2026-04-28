@@ -1,6 +1,6 @@
 {
   "tokenId": "(pending mint)",
-  "owner": "(pending wallet connect)",
+  "owner": "0x7426B39865D11207B8F795b10D70843FC3289051",
   "ensName": "eduardocruz.citizen.apex-ns.eth",
   "role": "executive",
   "traits": {
@@ -21,5 +21,6 @@
   "mintedAt": null,
   "_status": "local-only mock; Day 3 of build mints on chain",
   "twinAddress": "0x7fad72E0F1f92fa281aAC39E0e64554d406556Ac",
-  "ownerVerified": false
+  "ownerVerified": true,
+  "claimed_at": "2026-04-28T16:21:49.431Z"
 }
