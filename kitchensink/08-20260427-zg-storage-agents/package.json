@@ -1,0 +1,16 @@
+{
+  "name": "zg-storage-agents",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "node setup.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@0glabs/0g-serving-broker": "0.7.5",
+    "@0glabs/0g-ts-sdk": "*",
+    "ethers": "^6.13.0",
+    "gray-matter": "^4.0.3"
+  }
+}
