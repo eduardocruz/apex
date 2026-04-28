@@ -259,13 +259,14 @@ function renderFinish() {
     </div>
 
     <div class="actions">
-      <button class="primary" id="dl-soul">Download SOUL.md</button>
-      <button class="ghost" id="dl-bundle">Download all (zip)</button>
+      <button class="primary" id="mint-btn">Mint twin</button>
+      <button class="ghost" id="dl-soul">Download SOUL.md</button>
       <button class="ghost" id="restart">Start over</button>
     </div>
-    <p class="qhint" style="margin-top: 18px;">
-      Storage upload to 0G is pending — testnet flow contract is reverting (see <code>kitchensink/08</code>).
-      Day 3 of the build switches this to encrypt+upload once unblocked.
+    <div id="mint-result" style="margin-top: 18px;"></div>
+    <p class="qhint" style="margin-top: 12px;">
+      Mint writes <code>phase2/citizens/&lt;ens&gt;/</code> on disk. Day 3 swaps this for
+      encrypt-client-side + upload to 0G Storage (testnet flow contract still reverting — see <code>kitchensink/08</code>).
     </p>
   `;
 }
@@ -299,8 +300,8 @@ function render() {
     });
   } else {
     el.innerHTML = renderFinish();
+    document.getElementById("mint-btn").addEventListener("click", mintTwin);
     document.getElementById("dl-soul").addEventListener("click", () => download("SOUL.md", generateSoulMd()));
-    document.getElementById("dl-bundle").addEventListener("click", downloadBundle);
     document.getElementById("restart").addEventListener("click", () => {
       state.step = 0;
       state.answers = [];
@@ -416,7 +417,7 @@ function generateAgenticIdJson() {
   return {
     tokenId: "(pending mint)",
     owner: "(pending wallet connect)",
-    ensName: state.ensName ? `${state.ensName}.apex.eth` : "(unset)",
+    ensName: state.ensName ? `${state.ensName}.apex-ns.eth` : "(unset)",
     role: state.role.id,
     traits: generateTraitsJson(),
     voice: deriveVoice(state.traits),
@@ -436,6 +437,47 @@ function download(filename, content) {
   const a = document.createElement("a");
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
+}
+
+async function mintTwin() {
+  const btn = document.getElementById("mint-btn");
+  const out = document.getElementById("mint-result");
+  if (!state.ensName) {
+    out.innerHTML = `<div class="preview" style="border-color: #d97a7a;">ENS name is empty — go back to the influence step and set one.</div>`;
+    return;
+  }
+  btn.disabled = true; btn.textContent = "minting…";
+  try {
+    const r = await fetch("/api/mint", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ensName: state.ensName,
+        role: state.role.id,
+        traits: state.traits,
+        voice: deriveVoice(state.traits),
+        parentalAdviceWeight: state.parentalAdviceWeight,
+        soulMd: generateSoulMd(),
+        traitsJson: generateTraitsJson(),
+        agenticIdJson: generateAgenticIdJson(),
+      }),
+    });
+    const data = await r.json();
+    if (!data.ok) {
+      out.innerHTML = `<div class="preview" style="border-color: #d97a7a;">${escapeHtml(data.error)}${data.dir ? ` (existing: ${escapeHtml(data.dir)})` : ""}</div>`;
+      btn.disabled = false; btn.textContent = "Mint twin";
+      return;
+    }
+    out.innerHTML = `
+      <div class="step-title">Minted</div>
+      <div class="preview" style="border-color: var(--accent);">${escapeHtml(JSON.stringify(data, null, 2))}</div>
+      <p class="qhint" style="margin-top: 8px;">Citizen folder written. Run <code>git status</code> to see the new files.</p>
+    `;
+    btn.textContent = "Minted ✓";
+  } catch (e) {
+    out.innerHTML = `<div class="preview" style="border-color: #d97a7a;">${escapeHtml(e.message)}</div>`;
+    btn.disabled = false; btn.textContent = "Mint twin";
+  }
 }
 
 function downloadBundle() {

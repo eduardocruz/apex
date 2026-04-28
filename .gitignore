@@ -18,3 +18,4 @@ build/
 
 checkins/
 twin-*.txt
+phase2/citizens/*/wallet.json

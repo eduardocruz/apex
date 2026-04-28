@@ -83,7 +83,7 @@ This is what other citizens query when deciding to hire / vote / dispute.
 interface AgenticID {
   tokenId: string;          // ERC-7857 token id
   owner: `0x${string}`;     // EOA that minted the twin
-  ensName: string;          // e.g. "marc-twin.apex.eth"
+  ensName: string;          // e.g. "marc-twin.apex-ns.eth"
   role: Role;
   traits: TraitVector;      // 5 numbers in [0, 1]
   voice: [string, string, string];

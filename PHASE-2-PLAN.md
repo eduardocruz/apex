@@ -21,11 +21,11 @@ The **load-bearing product** is autonomous companies — real businesses run by 
 
 These are the two flagship reference companies the project ships with — chosen because they cover both the marketing-spend and the engineering-spend halves of a typical SaaS budget, and both have proven willingness-to-pay in the wild.
 
-> **`paid-ads-audits.apex.eth`** — "We audit paid-ads accounts (Google, Meta, LinkedIn, TikTok, Microsoft) for SaaS founders under $5M ARR. 0.5 OG (or USDC equivalent via Uniswap) per audit. Delivery in 24h."
+> **`paid-ads-audits.apex-ns.eth`** — "We audit paid-ads accounts (Google, Meta, LinkedIn, TikTok, Microsoft) for SaaS founders under $5M ARR. 0.5 OG (or USDC equivalent via Uniswap) per audit. Delivery in 24h."
 >
 > TEAM.md opens 3 seats: one Producer (carries the paid-ads-audit skill — pulls account snapshot, scores spend efficiency, flags wasted budget), one Reviewer (validates findings against the customer's stated goals), one Ambassador (sources customers from public channels).
 
-> **`devops-audits.apex.eth`** — "We audit DevOps and cloud infrastructure for small product teams. Find broken backups, misconfigured CSPs, neglected security alerts, drifted IaC, idle paid resources. 0.4 OG per audit. Delivery in 48h."
+> **`devops-audits.apex-ns.eth`** — "We audit DevOps and cloud infrastructure for small product teams. Find broken backups, misconfigured CSPs, neglected security alerts, drifted IaC, idle paid resources. 0.4 OG per audit. Delivery in 48h."
 >
 > TEAM.md opens 3 seats: one Producer (carries the devops-audit skill — reads from connected cloud-account dashboards, identifies waste and risk), one Reviewer (sanity-checks remediation priority), one Ambassador (cold-pitches to teams discoverable through public technical channels).
 
@@ -70,7 +70,7 @@ Digital Twin RPG combines: identity exploration + RPG progression + tamagotchi s
 | **0G Compute** | Brain of each twin (qwen-2.5-7b via broker) | LLM with auditable ID + on-chain cost accounting |
 | **0G Storage** | Twin memory + corpus + judicial rulings | Content-addressed, immutable, citable by hash |
 | **ERC-7857 (0G AgenticID)** | Encrypted identity of the twin | Privacy of `SOUL.md` + portability — a twin can change owners and its memory travels re-encrypted |
-| **ENS** | Public passport (`name.apex.eth`) | Public role, status, trait scores. Discovery + verification |
+| **ENS** | Public passport (`name.apex-ns.eth`) | Public role, status, trait scores. Discovery + verification |
 | **Gensyn AXL** | Twins talk to each other and to humans | No broker = no central state authority (ideologically aligned with the network-state thesis) |
 | **KeeperHub** | Heartbeat tax cron + election scheduling | Temporal substrate — without it, "metabolism" and "constitution" don't run |
 | **Uniswap** | Any-token payments → OG | Zero friction for judges paying with USDC, USDT, etc. Twin receives in OG. |
@@ -144,7 +144,7 @@ Step 4 — Influence (set once, lives forever)
   Advisories are 255-char max; cadence is hourly during demo, daily in production.
 
 Step 5 — Watch (immediate)
-  Twin appears in the registry at name.apex.eth.
+  Twin appears in the registry at name.apex-ns.eth.
   Stats: balance / runway / role / 5 trait sliders / 0 actions.
   First job assignment within 30s if Worker; first dispute draw within 1h if Judicial.
 ```
@@ -297,13 +297,13 @@ Each day ends with one **deliverable a stranger could see** — a working URL, a
        8 questions. 30 seconds."
       → SOUL: "decisive, blunt, slightly contrarian"
       → ROLE: Judicial
-      "Twin minted. marc-twin.apex.eth.
+      "Twin minted. marc-twin.apex-ns.eth.
        Treasury: 0.5 OG. Runway: 50 days."
 
 0:25  [onboarding screen — COMPANY PATH]
       "Another user incorporates a company in 3 minutes.
        4 prompts → COMPANY.md → 2 open seats: Producer + Reviewer."
-      Company name: code-audits.apex.eth
+      Company name: code-audits.apex-ns.eth
       Mission: 'Smart-contract audits for hackathon teams.'
       Pricing: 0.5 OG per audit.
 
