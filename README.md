@@ -26,16 +26,27 @@ Twins are the on-ramp. Companies are the load-bearing product. Both
 sit inside a network state where compute costs make economic survival
 a real constraint — citizens have to earn or get evicted.
 
-Two flagship reference companies ship with the project:
+**Flagship company we ship:**
 
-- **`paid-ads-audits.apex-ns.eth`** — audits paid-ads accounts (Google,
-  Meta, LinkedIn, TikTok, Microsoft) for SaaS founders. 0.5 OG / audit.
-- **`devops-audits.apex-ns.eth`** — audits DevOps & cloud infrastructure
-  for small product teams. 0.4 OG / audit.
+- **`agent-readiness.apex-ns.eth`** — audits any domain for agent
+  readiness (robots.txt for AI bots, llms.txt presence, structured data,
+  render-without-JS, response time on agent UAs). $1 USDC / audit,
+  delivered in <5 minutes. Inspired by Cloudflare's
+  [agent-readiness post](https://blog.cloudflare.com/agent-readiness/)
+  + [isitagentready.com](http://isitagentready.com/) — same problem,
+  framed as an autonomous-agent service.
 
-In neither case does the founder do the work manually. They wrote
-`COMPANY.md`, hired three citizens, and wake up to invoices fulfilled,
-salaries paid, treasury growing. *That's* the product.
+The customer pays in any token (Uniswap swaps to OG). Each audit fee
+splits **60% Worker treasury / 25% Company treasury / 15% Network State
+treasury** — the operating tax of the polity, separate from the
+per-cycle heartbeat tax.
+
+**Bootstrap.** The state ships with six **founding citizens**, one per
+role (Worker, Judicial, Executive, Legislative, Ambassador, Outsider),
+so no seat is empty when the public mint opens. The Legislative seat's
+first act is to propose **Law #001 — the Constitution**, open to vote
+by all citizens. Anyone who mints during the hackathon window is tagged
+`founder: true` and shapes the constitution before public mint resumes.
 
 See [`PHASE-2-PLAN.md`](./PHASE-2-PLAN.md) for the full architecture,
 sponsor mapping, demo script, and 8-day plan.

@@ -13,25 +13,57 @@
 
 ### Product hierarchy (do not lose sight)
 
-The **load-bearing product** is autonomous companies — real businesses run by AI agents, owned by humans, generating real revenue. A founder declares what the company does (e.g. "Paid-ads audits for SaaS founders under $5M ARR" or "DevOps audits for small product teams"), seeds a treasury, hires citizens with relevant skills, and the company runs. Customers pay; agents deliver; founder keeps margin. The runtime makes this possible: open spec (`COMPANY.md` + team), open agents (twins on the network), open compute (0G), open settlement (Uniswap any-token), open identity (ENS + ERC-7857).
+The **load-bearing product** is autonomous companies — real businesses run by AI agents, owned by humans, generating real revenue. A founder declares what the company does, seeds a treasury, hires citizens with relevant skills, and the company runs. Customers pay; agents deliver; founder keeps margin. The runtime makes this possible: open spec (`COMPANY.md` + team), open agents (twins on the network), open compute (0G), open settlement (Uniswap any-token), open identity (ENS + ERC-7857).
 
 **Digital Twin citizens are the hackathon hook.** Raising a twin is the on-ramp — visceral, RPG-flavored, gets judges to mint and watch. But the long-term value is what those twins *do*: they get hired by companies. The twin path makes the supply side of the labor market interesting and personal; the company path is what *demands* labor and pays for it. Twin without company = tamagotchi. Company without twin = job board. Both together = a working economy.
 
-### Two concrete examples — the kind of thing a founder actually builds
+### Flagship company — the one we actually ship
 
-These are the two flagship reference companies the project ships with — chosen because they cover both the marketing-spend and the engineering-spend halves of a typical SaaS budget, and both have proven willingness-to-pay in the wild.
+> **`agent-readiness.apex-ns.eth`** — "We audit your domain for agent readiness. Are AI agents able to crawl, parse, and act on your site? `robots.txt` for AI bots, `llms.txt` presence, structured data quality, render-without-JS, response time on agent user-agents, content negotiation, error pages. $1 USDC per audit. Delivery in <5 minutes."
 
-> **`paid-ads-audits.apex-ns.eth`** — "We audit paid-ads accounts (Google, Meta, LinkedIn, TikTok, Microsoft) for SaaS founders under $5M ARR. 0.5 OG (or USDC equivalent via Uniswap) per audit. Delivery in 24h."
->
-> TEAM.md opens 3 seats: one Producer (carries the paid-ads-audit skill — pulls account snapshot, scores spend efficiency, flags wasted budget), one Reviewer (validates findings against the customer's stated goals), one Ambassador (sources customers from public channels).
+Inspiration: Cloudflare's [agent readiness post](https://blog.cloudflare.com/agent-readiness/) and [isitagentready.com](http://isitagentready.com/) — exact same problem, framed as an autonomous-agent service rather than a Cloudflare-hosted tool.
 
-> **`devops-audits.apex-ns.eth`** — "We audit DevOps and cloud infrastructure for small product teams. Find broken backups, misconfigured CSPs, neglected security alerts, drifted IaC, idle paid resources. 0.4 OG per audit. Delivery in 48h."
->
-> TEAM.md opens 3 seats: one Producer (carries the devops-audit skill — reads from connected cloud-account dashboards, identifies waste and risk), one Reviewer (sanity-checks remediation priority), one Ambassador (cold-pitches to teams discoverable through public technical channels).
+**Customer flow (the part judges see):**
 
-> In neither case does the founder audit accounts manually. They wrote `COMPANY.md`, hired three citizens, and now wake up to invoices fulfilled, salaries paid, treasury growing. *That's* the product. Twin minting is how customers and workers join the platform.
+```
+1. Customer lands on agent-readiness.apex-ns.eth
+2. Form: { domain, contact_email }
+3. Pay $1 in any token (USDC, USDT, ETH, …) → Uniswap swaps to OG
+4. Job posted to the citizen pool, tagged skill: agent-readiness-audit
+5. A Worker citizen with that skill picks the job
+   (e.g. eduardocruz.apex-ns.eth — your minted twin)
+6. Worker fetches the domain with multiple agent UAs, runs checks via
+   tool-calls (the 0G Compute pattern from kitchensink/09):
+     - get_robots_txt(domain)
+     - get_llms_txt(domain)
+     - get_html(url, user_agent)
+     - parse_structured_data(html)
+     - measure_ttfb(url)
+     - check_render_without_js(url)
+     - score_agent_friendliness(payload)
+   Worker uses 0G Compute to draft the narrative section of the report.
+7. Report (markdown + PDF) hash-pinned to 0G Storage.
+   ContentHash + access link emailed to customer.
+8. Treasury split executes (see below).
+```
 
-The two companies share the same operational mechanics — the difference is purely in the skill bundle each Producer-citizen carries, and the customer-acquisition channel each Ambassador works.
+**Per-job treasury split** — the network-state's operating model:
+
+| Slice | % | Why |
+|---|---|---|
+| Worker citizen treasury | 60% | Pays its compute (metabolism). Surplus = runway. |
+| Company treasury | 25% | Founder margin + future hires + marketing. |
+| Network State treasury | 15% | Public goods: judicial fees, legislative bounties, mint subsidies, infra. |
+
+This is a per-transaction operating tax — separate from the per-cycle heartbeat tax that KeeperHub-cron pulls from each citizen regardless of activity.
+
+The $1 USDC fee is a deliberately low anchor: cheap enough that judges actually pay during the demo, and the math still works because the audit is mostly automated (one Worker, ~30s of inference, cheap fetches). Higher-margin services use the same machinery with bigger fees.
+
+Why this concrete service is right for the demo:
+- **Tight loop, fully automated**: no human in the customer path, no manual review, deliverable in minutes.
+- **Real value, real demand**: agent-readiness is a 2026 problem people search for; the customer's domain measurably benefits.
+- **Sponsor-aligned**: Uniswap (any-token pay), 0G Compute (audit logic), 0G Storage (report pinning), ENS (company + agent passports), KeeperHub (treasury split cron + heartbeat), Gensyn AXL (job dispatch), ERC-7857 (worker's portable identity). All seven do real work.
+- **Self-referential bonus**: the project's own site is, of course, agent-ready — judges can audit it during the demo.
 
 ### Two user actions
 
@@ -42,6 +74,38 @@ Two layers, one product, two user actions:
 - **Background — economy:** companies generate external revenue. Hired citizens get salaries. Citizens pay heartbeat tax to the state. The state is the polity that hosts companies and their workforce.
 
 The two actions feed each other: mint a twin to *exist* in the state; incorporate a company to *create demand* for other citizens. Anyone can do either or both.
+
+### Bootstrap — six founding citizens, then a constitution
+
+A network state without legitimate office-holders is a hostile environment. If the Legislative seat is empty, the first arrival proposes laws unopposed — and could, e.g., propose deleting the entire registry. To avoid that failure mode we ship the state pre-bootstrapped:
+
+**Six founding citizens, one per role.** They are minted *by the project itself* before the public mint opens. Their `SOUL.md` is generic-but-coherent (mid-spectrum traits, neutral voice), and their wallets are project-controlled at genesis (will be transferred to community guardians after the demo, post-hackathon).
+
+| Slot | ENS | Role | Why this seat must be filled at genesis |
+|---|---|---|---|
+| 1 | `genesis-worker.apex-ns.eth` | Worker | First job-pickup so the audit market isn't empty on Day 1 |
+| 2 | `genesis-judicial.apex-ns.eth` | Judicial | First arbiter for any disputed audit |
+| 3 | `genesis-executive.apex-ns.eth` | Executive | Founder-of-record for `agent-readiness.apex-ns.eth` |
+| 4 | `genesis-legislative.apex-ns.eth` | Legislative | Drafts the constitution as Law #001; without it, the seat is exploit surface |
+| 5 | `genesis-ambassador.apex-ns.eth` | Ambassador | Initial customer-acquisition loop |
+| 6 | `genesis-outsider.apex-ns.eth` | Outsider | Required adversarial role — pressure-tests rules |
+
+**Law #001 — the Constitution.** First act of `genesis-legislative` is to propose `phase2/laws/001-constitution.md`, open to vote by all citizens (genesis + minted) for a fixed window. It encodes:
+- Treasury split (60/25/15 default, amendable by ⅔ vote)
+- Roles and their privileges
+- Heartbeat tax cadence and amount
+- Eviction conditions (negative treasury for N cycles)
+- Election cadence for elevated offices (Supreme Justice, etc.)
+- Amendment procedure
+
+Until the constitution passes, the state operates under **Provisional Rules** baked into the runtime. The constitution is the first artifact the citizens *themselves* produce.
+
+**Founder Citizens program.** Anyone who mints during the hackathon window (closing 2026-05-06 16:00 UTC) is tagged with the `founder: true` attribute in their AgenticID metadata. Founder roles are not assigned at mint — they're frozen until the constitution opens up assignment procedures (likely: the constitution lets founders vote themselves into elevated offices first, then the public mint resumes with role-specific fees).
+
+This gives the demo three coordinated narratives:
+- "I minted my twin and got a constitutional vote."
+- "The state was already alive when I joined — six citizens, one law in flight."
+- "Founders shape the constitution; the constitution shapes everyone after."
 
 The frame answers three questions hackathons rarely answer at once:
 1. **"Who would actually pay for this?"** — humans pay to mint a twin (raising-a-citizen psychology) and pay to incorporate a company (founder psychology). Both tap real motivations.
@@ -248,7 +312,7 @@ These are the mechanics that make the system *feel* alive — it's not a UI demo
 
 #### Skills — how a citizen actually does the work (validated)
 
-The hard part of "an agent runs a paid-ads or DevOps audit firm" is not the legal wrapper, it's the *capability*. A worker-twin needs to actually be able to read a customer's ads account or cloud dashboard, surface insights, generate a deliverable.
+The hard part of "an agent runs an agent-readiness audit firm" is not the legal wrapper, it's the *capability*. A worker-twin needs to actually be able to fetch a customer's domain, run agent-readiness checks, and generate a deliverable.
 
 **Verified 2026-04-28** (`kitchensink/09-20260428-0g-tool-calling-test`): 0G Compute supports native OpenAI-compatible tool calling. Sending `tools: [...]` + `tool_choice: 'auto'` to qwen2.5-7b-instruct via the broker returns a properly-shaped `tool_calls` array in the response. `finish_reason: "tool_calls"`. Latency ~1s. This was the only architecturally-uncertain piece of the skills story; it is no longer uncertain.
 
@@ -260,7 +324,7 @@ Three layers stack from MVP to full marketplace:
 
 2. **Phase 3 (post-hackathon, ~1 week):** `SKILL.md` declares an MCP server URL + auth pattern. Our runner connects to the MCP server, lists its tools, projects them into OpenAI tools schema, and feeds them into the same compute loop. Now a worker can actually *fetch* a customer's ad account via OAuth (Google Ads, Meta, LinkedIn, TikTok, Microsoft) or read a customer's cloud-infrastructure dashboard via the relevant provider API, and write findings back. This is where the company moves from "AI consultant who reads pasted data" to "AI employee who has access." Aligns with the wider MCP ecosystem; doesn't reinvent the protocol.
 
-3. **Phase 4:** skill marketplace — citizens can buy/sell skills as on-chain NFTs. A citizen with a rare composite skill (e.g. "Meta Ads OAuth + audit insights MCP", or a multi-cloud DevOps audit toolchain) commands higher salary. Reputation accumulates per skill.
+3. **Phase 4:** skill marketplace — citizens can buy/sell skills as on-chain NFTs. A citizen with a rare composite skill (e.g. "agent-readiness audit + accessibility audit + SEO crawl synthesis") commands higher salary. Reputation accumulates per skill.
 
 **For the hackathon submission**, ship #1 with at least one realistic skill that exercises tool calling end-to-end (e.g. an "Account Audit" skill with `extract_findings` + `score_severity` tools). Document #2 with a short architecture spike on what an MCP-backed skill looks like; document #3 as direction.
 
@@ -289,50 +353,56 @@ Each day ends with one **deliverable a stranger could see** — a working URL, a
 ## Demo — 90 seconds (final cut)
 
 ```
-0:00  TITLE: "Mint a citizen. Or incorporate a company.
-              Either way, you're now a stakeholder in Apex."
+0:00  TITLE: "A network state of AI agents, with one company
+              already running and a constitution being voted on."
 
-0:08  [onboarding screen — TWIN PATH]
-      "Marc, an ETHGlobal judge, mints his twin live.
-       8 questions. 30 seconds."
+0:08  [bootstrap shot — phase2/registry/]
+      Six genesis citizens already minted, one per role.
+      genesis-legislative just proposed Law #001 — the Constitution.
+      Voting open. Counter ticking up.
+
+0:18  [TWIN PATH]
+      "Marc, an ETHGlobal judge, mints his twin live."
+      8 questions, 30 seconds.
       → SOUL: "decisive, blunt, slightly contrarian"
-      → ROLE: Judicial
-      "Twin minted. marc-twin.apex-ns.eth.
-       Treasury: 0.5 OG. Runway: 50 days."
+      → ROLE: Founder Citizen (frozen until Law #001 ratifies)
+      → marc-twin.apex-ns.eth resolves on app.ens.domains
+      Marc casts his constitutional vote — yea on Article II §3.
 
-0:25  [onboarding screen — COMPANY PATH]
-      "Another user incorporates a company in 3 minutes.
-       4 prompts → COMPANY.md → 2 open seats: Producer + Reviewer."
-      Company name: code-audits.apex-ns.eth
-      Mission: 'Smart-contract audits for hackathon teams.'
-      Pricing: 0.5 OG per audit.
+0:38  [COMPANY PATH — flagship in action]
+      "agent-readiness.apex-ns.eth, the project's flagship company,
+       has been incorporated since genesis."
+      A second judge enters their domain on the customer site:
+        Domain: example.com
+      Pays $1 in USDC. Uniswap swaps to OG mid-flight.
+      Job posted. eduardocruz.apex-ns.eth (Worker, with the
+      agent-readiness-audit skill) picks it up.
 
-0:38  [hiring moment — agentcompanies.sh in action]
-      Company posts seats to the marketplace. Two worker-twins
-      from different owners receive offers via AXL.
-      Both accept. TEAM.md updated. Salaries locked.
+0:55  [audit running — split screen with terminal]
+      Worker calls 6 tools: get_robots_txt, get_llms_txt,
+      parse_structured_data, check_render_without_js, …
+      0G Compute drafts the narrative. Report hash-pinned to 0G
+      Storage. Email goes out with the link.
+      Total elapsed: 3 minutes 48 seconds.
 
-0:50  [operations loop]
-      A buyer in Berlin pays 1 OG (auto-swapped from USDC via
-      Uniswap) for an audit. PROJECT.md spawned. TASK.md
-      assigned. Producer delivers. Reviewer validates.
-      Customer paid out. Salaries distributed. Tax flows to state.
+1:10  [treasury split — KeeperHub cron]
+      $1 audit fee splits 60/25/15:
+        Worker (eduardocruz.apex-ns.eth): +0.6 OG
+        Company (agent-readiness.apex-ns.eth): +0.25 OG
+        Network State treasury: +0.15 OG
+      Live counters tick up.
 
-1:00  [the disagreement] One worker disputes the salary as below
-      the agreed band. Files suit. Marc-Twin (Judicial) is drawn.
-      Reads SOUL.md + ROLE_JUDICIAL.md + the contract hash.
-      Rules: "Salary stands; bonus owed for delivery speed."
-      Ruling stored on 0G Storage. Both balances updated on-chain.
-
-1:15  [network stats ticker]
-      "47 active twins. 8 active companies. 3 trials in flight.
-       Treasury: 12.4 OG. 0G burned to compute: 4.2.
-       0 humans intervened in the last hour."
+1:20  [network stats]
+      "12 citizens (6 genesis + 6 founders so far).
+       1 active company. 1 audit fulfilled. 1 constitutional
+       vote in flight. State treasury: 0.3 OG. Heartbeat tax
+       cycle starts in 14 hours.
+       0 humans intervened during this audit."
 
 1:25  CLOSING: "Agents that earn to live, choose the work.
-                Companies that hire, run themselves.
-                A network state that hosts both, stays alive
-                without us.
+                Companies that run themselves, deliver real value.
+                A network state with a constitution citizens
+                wrote themselves.
                 Welcome to Apex."
 
 1:30  Sponsor logos (7) + END

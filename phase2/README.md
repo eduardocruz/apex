@@ -8,33 +8,60 @@ plan; this directory is what actually ships.
 ```
 phase2/
   onboarding/
-    twin/         Day 1 — 8-question form → SOUL.md + role pick
-    company/      Day 4 — COMPANY.md + TEAM.md generator
-  citizens/       Minted twins. Each citizen is one folder: SOUL.md (encrypted
-                  in production, plaintext local), ROLE.md, traits.json, ledger.json
-  companies/      Incorporated companies. Each is one folder following the
-                  agentcompanies.io spec: COMPANY.md, TEAM.md, AGENTS.md,
-                  PROJECT.md, TASK.md, SKILL.md
-  citizen/SCHEMA.md   The citizen object spec
-  company/SCHEMA.md   The company object spec
+    twin/             Mint-a-twin form (Node http server, ~700 LOC)
+    company/          Incorporate-a-company form (Day 4)
+  citizens/           Minted twins (one folder per citizen)
+                        SOUL.md, ROLE.md, traits.json, agentic-id.json,
+                        ledger.json, wallet.json (gitignored)
+  companies/          Incorporated companies (one folder per company)
+                        COMPANY.md, TEAM.md, …  (agentcompanies.io spec)
+  laws/               Network-state laws — markdown + voting metadata
+  citizen/SCHEMA.md   Citizen + AgenticID interface
+  company/SCHEMA.md   Company schema (Day 4)
 ```
 
-## Day 1 status (2026-04-28)
+## Status
 
-- [x] Directory scaffolded
-- [x] Citizen SCHEMA defined
-- [x] Twin onboarding form (8 forced-choice questions → SOUL.md)
-- [x] Local-only mock for 0G Storage (download SOUL.md, no upload yet — block from kitchensink/08)
-- [x] AgenticID interface defined (TypeScript types)
+| Day | Deliverable | Status |
+|---|---|---|
+| 1 | Twin onboarding form | ✅ Done |
+| 2 | ENS subnames via Namestone (`*.apex-ns.eth`) + per-twin wallet | ✅ Done |
+| 3 | SOUL.md encrypted client-side + uploaded to 0G Storage | ⏳ Blocked on testnet flow contract |
+| 4 | Company incorporation form + 6 genesis citizens | Next |
+| 5 | Worker SKILL.md + agent-readiness audit live | |
+| 6 | Treasury split + KeeperHub heartbeat | |
+| 7 | Customer site + first paid audit | |
+| 8 | E2E demo + buffer | |
+| 9 | Video + ETHGlobal submit | |
 
 ## Run locally
 
-```
+```bash
 cd onboarding/twin
-python3 -m http.server 5858
-# open http://localhost:5858
+npm install
+cp .env.example .env  # add your NAMESTONE_API_KEY
+node server.js
+# → http://localhost:5858
 ```
 
-No backend, no build. Pure HTML + vanilla JS. The generated SOUL.md
-downloads to your machine; in Day 3 we encrypt it with the wallet key
-and upload to 0G Storage (when the testnet flow contract unblocks).
+The form generates a SOUL.md, picks a role, mints a per-twin Ethereum
+wallet, persists 6 files to `citizens/<slug>/`, and registers
+`<slug>.apex-ns.eth` via Namestone (off-chain ENS subname, free, ENS
+sponsor partner).
+
+Forward resolution verified via public ENS resolvers — e.g.
+[`eduardocruz.apex-ns.eth`](https://api.ensideas.com/ens/resolve/eduardocruz.apex-ns.eth)
+points to `0x7fad72E0F1f92fa281aAC39E0e64554d406556Ac`.
+
+## Flagship company
+
+`companies/agent-readiness/` — see [`COMPANY.md`](./companies/agent-readiness/COMPANY.md).
+Inspired by Cloudflare's [agent-readiness post](https://blog.cloudflare.com/agent-readiness/)
++ [isitagentready.com](http://isitagentready.com/). $1 USDC per audit,
+treasury split 60/25/15.
+
+## Constitution
+
+`laws/001-constitution.md` — Law #001, drafted as the first act of
+`genesis-legislative.apex-ns.eth`, open to vote by all citizens once
+the 6 genesis citizens are minted.
