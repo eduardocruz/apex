@@ -58,3 +58,11 @@ Updated as work happens, not retroactively.
 | 2026-04-25 | `kitchensink/06-20260425-gensyn-axl-hello/.gitignore` | generated | Claude Code (Opus 4.7) | axl-src/, axl-bin/, *.pem, logs. |
 | 2026-04-25 | `kitchensink/README.md` | assisted | Claude Code (Opus 4.7) | Added row 06 (Gensyn AXL) to index. |
 | 2026-04-25 | `FEEDBACK-gensyn.md` | generated | Claude Code (Opus 4.7) | Gensyn $5k feedback bounty submission: tools used, what worked, doc gaps (virtual tcp_port not flagged, no two-node hello in repo, no Node/Python SDK), feature requests, comparisons. |
+| 2026-04-27 | `kitchensink/07-20260427-agent-0g-compute-hello/setup.js` | generated | Claude Code (Opus 4.7) | One-time setup: deposit 3 OG into broker ledger (contract min), list inference services, pick a chatbot provider, save selection to `.selected-provider.json`. |
+| 2026-04-27 | `kitchensink/07-20260427-agent-0g-compute-hello/server.js` | generated | Claude Code (Opus 4.7) | HTTP agent on :5757. POST /api/chat → 0G Compute provider GPU → reply. GET /api/info shows wallet/provider/model/balance. Uses `@0glabs/0g-serving-broker` + ethers v6. |
+| 2026-04-27 | `kitchensink/07-20260427-agent-0g-compute-hello/index.html` | generated | Claude Code (Opus 4.7) | UI: yellow intro box explaining what the page proves, status panel (refreshable), chat box with optional multi-turn toggle, model + latency badge per response. |
+| 2026-04-27 | `kitchensink/07-20260427-agent-0g-compute-hello/README.md` | generated | Claude Code (Opus 4.7) | Setup steps, faucet flow, gotcha about 3 OG ledger minimum, what 0G Compute exposes (per-token billing, OpenAI-compat, optional TEE), decision impact for apex. |
+| 2026-04-27 | `kitchensink/07-20260427-agent-0g-compute-hello/package.json` | generated | Claude Code (Opus 4.7) | type:module, deps: @0glabs/0g-serving-broker + ethers ^6.13.0. |
+| 2026-04-27 | `kitchensink/07-20260427-agent-0g-compute-hello/.env.example` | generated | Claude Code (Opus 4.7) | PRIVATE_KEY (throwaway warning) + ZG_RPC_URL override + PORT. |
+| 2026-04-27 | `kitchensink/07-20260427-agent-0g-compute-hello/.gitignore` | generated | Claude Code (Opus 4.7) | node_modules, .env, .selected-provider.json, package-lock. |
+| 2026-04-27 | `kitchensink/README.md` | assisted | Claude Code (Opus 4.7) | Added row 07 (0G Compute hello world) to index. |

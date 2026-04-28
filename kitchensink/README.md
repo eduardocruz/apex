@@ -20,6 +20,7 @@ hackathon project to one.
 | 04 | [`04-20260425-ens-resolve-hello`](./04-20260425-ens-resolve-hello) | ENS | Two-form web UI for forward (name → address + text records) and reverse (address → name) resolution via viem. The atomic primitive underneath agent-identity-via-subnames. |
 | 05 | [`05-20260425-0g-inft-explorer`](./05-20260425-0g-inft-explorer) | 0G | Read-only viewer for the AgenticID (ERC-7857) registry on 0G Galileo Testnet. Surfaces what's actually stored when you mint an Agentic ID — descriptions in clear, values as hashes (privacy-preserving by design). |
 | 06 | [`06-20260425-gensyn-axl-hello`](./06-20260425-gensyn-axl-hello) | Gensyn | Two AXL nodes running locally with separate ed25519 identities, peered over `tls://127.0.0.1:9001` and exchanging messages in both directions through the gVisor mesh. Tiny Node proxy + HTML UI to drive Send/Receive. The minimum that satisfies the bounty's "communication across separate AXL nodes" rule. |
+| 07 | [`07-20260427-agent-0g-compute-hello`](./07-20260427-agent-0g-compute-hello) | 0G | An "open agent" that talks to a real LLM (`qwen/qwen-2.5-7b-instruct`) over the 0G Compute Network — no local model, no OpenAI key. Throwaway wallet, broker SDK deposits 3 OG (contract minimum), provider GPU runs inference, OpenAI-compatible chat completions endpoint. UI shows wallet/provider/model status + chat box with optional multi-turn. The piece every other kitchensink decorates around. |
 
 ## Conventions
 

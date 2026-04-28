@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>kitchensink/07 — Agent on 0G Compute (no local model)</title>
+<style>
+  body { font: 14px/1.5 -apple-system, system-ui, sans-serif; max-width: 760px; margin: 30px auto; padding: 0 20px; color: #222; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .lede { color: #666; font-size: 13px; margin: 0 0 18px; }
+  .intro { background: #fff8d6; border: 1px solid #e3d77f; padding: 14px 16px; border-radius: 6px; margin-bottom: 24px; font-size: 13px; }
+  .intro p { margin: 0 0 8px; }
+  .intro strong { color: #614a00; }
+  fieldset { border: 1px solid #ddd; padding: 14px 16px 16px; border-radius: 6px; margin-bottom: 16px; }
+  legend { font-weight: 600; padding: 0 8px; }
+  label { display: block; font-size: 12px; color: #555; margin: 8px 0 3px; }
+  textarea, input { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font: inherit; }
+  textarea { font-family: ui-monospace, Menlo, monospace; font-size: 13px; min-height: 70px; }
+  button { margin-top: 10px; padding: 6px 14px; border: 1px solid #888; background: #fafafa; border-radius: 4px; cursor: pointer; font: inherit; }
+  button:hover { background: #eee; }
+  button:disabled { opacity: 0.5; cursor: wait; }
+  .out { margin-top: 12px; padding: 10px; background: #f6f6f6; border-radius: 4px; font-size: 13px; white-space: pre-wrap; }
+  .meta { color: #666; font-size: 11px; font-family: ui-monospace, Menlo, monospace; word-break: break-all; }
+  .reply { font-size: 14px; color: #111; }
+  .err { color: #b22; }
+  .turn { border-bottom: 1px dashed #ddd; padding-bottom: 10px; margin-bottom: 10px; }
+  .turn:last-child { border-bottom: none; }
+  .you { color: #0a4; font-weight: 600; }
+  .agent { color: #348; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>kitchensink/07 — Talk to an agent that runs on 0G Compute</h1>
+<p class="lede">No local model. No OpenAI API key. The LLM runs on a provider's GPU somewhere on the 0G Compute Network.</p>
+
+<div class="intro">
+  <p><strong>What this proves.</strong> You can run an "open agent" without OpenAI/Anthropic and without a powerful machine. You send <code>POST /api/chat</code> with a message; the server forwards to a 0G Compute provider (selected at setup time) using the broker SDK; the provider's GPU runs inference; the reply comes back.</p>
+  <p><strong>What pays for it.</strong> A throwaway wallet you funded with free testnet OG tokens via the faucet. Every chat turn debits a tiny amount from your broker ledger. If the ledger empties, run <code>npm run setup</code> to top up.</p>
+  <p><strong>What's NOT here.</strong> No streaming, no memory across page reloads, no tools, no agent loop. This is "agent" in the most basic sense — one turn, one reply. Everything richer (multi-turn, tool calls, AXL transport, ENS identity) sits on top of this primitive.</p>
+</div>
+
+<fieldset>
+  <legend>Status</legend>
+  <button onclick="loadInfo()">Refresh info</button>
+  <div class="out meta" id="info">click Refresh to load</div>
+</fieldset>
+
+<fieldset>
+  <legend>Talk to the agent</legend>
+  <label>Your message</label>
+  <textarea id="msg">oi, como vc esta?</textarea>
+  <label><input type="checkbox" id="multiturn" /> &nbsp;remember previous turns this page (multi-turn)</label>
+  <button id="send" onclick="send()">Send</button>
+  <button onclick="clearHistory()">Clear history</button>
+  <div id="conv"></div>
+</fieldset>
+
+<script>
+let history = [];
+
+async function loadInfo() {
+  const out = document.getElementById('info');
+  out.textContent = 'loading...';
+  try {
+    const r = await fetch('/api/info');
+    const data = await r.json();
+    out.textContent = JSON.stringify(data, null, 2);
+  } catch (e) { out.innerHTML = '<span class="err">' + e.message + '</span>'; }
+}
+
+function clearHistory() {
+  history = [];
+  document.getElementById('conv').innerHTML = '';
+}
+
+async function send() {
+  const btn = document.getElementById('send');
+  const msg = document.getElementById('msg').value.trim();
+  const multi = document.getElementById('multiturn').checked;
+  if (!msg) return;
+  btn.disabled = true;
+  btn.textContent = 'thinking...';
+
+  const conv = document.getElementById('conv');
+  const turn = document.createElement('div');
+  turn.className = 'turn';
+  turn.innerHTML = '<div class="out"><span class="you">You:</span> ' +
+    msg.replace(/&/g,'&amp;').replace(/</g,'&lt;') +
+    '</div><div class="out reply"><span class="agent">Agent:</span> <em>...</em></div>';
+  conv.appendChild(turn);
+
+  try {
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, history: multi ? history : [] }),
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    turn.querySelector('.reply').innerHTML =
+      '<span class="agent">Agent:</span> ' + (data.reply || '').replace(/&/g,'&amp;').replace(/</g,'&lt;') +
+      '<div class="meta">model: ' + data.model + ' &nbsp; latency: ' + data.latencyMs + 'ms</div>';
+    if (multi) {
+      history.push({ role: 'user', content: msg });
+      history.push({ role: 'assistant', content: data.reply });
+    }
+  } catch (e) {
+    turn.querySelector('.reply').innerHTML = '<span class="err">error: ' + e.message + '</span>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send';
+    document.getElementById('msg').value = '';
+  }
+}
+
+loadInfo();
+</script>
+</body>
+</html>

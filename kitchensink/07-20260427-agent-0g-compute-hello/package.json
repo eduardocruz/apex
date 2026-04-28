@@ -1,0 +1,14 @@
+{
+  "name": "agent-0g-compute-hello",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "node setup.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@0glabs/0g-serving-broker": "*",
+    "ethers": "^6.13.0"
+  }
+}

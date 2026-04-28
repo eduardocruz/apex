@@ -1,0 +1,4 @@
+node_modules/
+.env
+.selected-provider.json
+package-lock.json
