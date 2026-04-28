@@ -90,6 +90,33 @@ function updateWalletButton() {
   }
 }
 
+async function claimCitizen(slug) {
+  if (!connectedWallet) {
+    alert("Connect your wallet first.");
+    return;
+  }
+  const message = `Claim Apex Twin\n\nSlug: ${slug}\nNetwork: Apex (apex-ns.eth)\n\nThis twin currently has no verified owner. By signing, you become its owner.`;
+  let sig;
+  try {
+    sig = await window.ethereum.request({ method: "personal_sign", params: [message, connectedWallet] });
+  } catch (e) {
+    alert("Signature rejected: " + (e.message || e));
+    return;
+  }
+  const r = await fetch("/api/rebind", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ slug, ownerSig: sig, ownerAddress: connectedWallet }),
+  });
+  const data = await r.json();
+  if (!data.ok) {
+    alert("Claim failed: " + data.error);
+    return;
+  }
+  // refresh
+  await load();
+}
+
 async function load() {
   const r = await fetch("/api/citizens");
   const data = await r.json();
@@ -164,9 +191,12 @@ function render() {
       isMine ? `<span class="role-badge founder-badge">mine</span>` : "",
       c.ownerVerified ? `<span class="role-badge" style="background:#1a3a3a;color:#82bfbf;">owner verified</span>` : "",
     ].join("");
-    const ownerLine = c.owner && c.owner !== "(project-controlled at genesis)" && !c.owner.startsWith("(")
+    const claimable = !c.genesis && !c.ownerVerified;
+    const ownerLine = c.ownerVerified
       ? `<div class="meta" style="margin-top: 4px;">owner: ${escapeHtml(c.owner)}</div>`
-      : c.genesis ? `<div class="meta" style="margin-top: 4px;">owner: project-controlled (genesis)</div>` : "";
+      : c.genesis
+        ? `<div class="meta" style="margin-top: 4px;">owner: project-controlled (genesis)</div>`
+        : `<div class="meta" style="margin-top: 4px;">owner: <em>unclaimed</em> <button onclick="claimCitizen('${escapeHtml(c.slug)}')" style="margin-left: 6px; background: transparent; color: #ffd166; border: 1px solid #ffd166; padding: 2px 8px; border-radius: 3px; font: inherit; font-size: 11px; cursor: pointer;">Claim ownership</button></div>`;
     return `
       <div class="citizen ${c.genesis ? "genesis" : ""}">
         <div>

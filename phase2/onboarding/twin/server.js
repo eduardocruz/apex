@@ -56,6 +56,53 @@ function mintMessage(slug) {
   return `Mint Apex Twin\n\nSlug: ${slug}\nNetwork: Apex (apex-ns.eth)\n\nBy signing, you become the owner of this twin. You can transfer or revoke later.`;
 }
 
+function claimMessage(slug) {
+  return `Claim Apex Twin\n\nSlug: ${slug}\nNetwork: Apex (apex-ns.eth)\n\nThis twin currently has no verified owner. By signing, you become its owner.`;
+}
+
+async function rebindOwner({ slug, ownerSig, ownerAddress }) {
+  if (!slug || !ownerSig || !ownerAddress) return { ok: false, error: 'missing fields' };
+  const dir = path.join(CITIZENS_DIR, slug);
+  if (!fs.existsSync(dir)) return { ok: false, error: `citizen "${slug}" does not exist` };
+
+  const idPath = path.join(dir, 'agentic-id.json');
+  const id = JSON.parse(fs.readFileSync(idPath, 'utf8'));
+
+  if (id.genesis) return { ok: false, error: 'genesis citizens are project-controlled until constitution ratifies guardian transfer' };
+  if (id.ownerVerified) return { ok: false, error: `citizen already has a verified owner: ${id.owner}` };
+
+  // Verify signature
+  const msg = claimMessage(slug);
+  let recovered;
+  try { recovered = verifyMessage(msg, ownerSig); }
+  catch (e) { return { ok: false, error: `bad signature: ${e.message}` }; }
+  if (recovered.toLowerCase() !== ownerAddress.toLowerCase()) {
+    return { ok: false, error: 'signature does not match claimed owner' };
+  }
+
+  // Update agentic-id
+  id.owner = recovered;
+  id.ownerVerified = true;
+  id.claimed_at = new Date().toISOString();
+  fs.writeFileSync(idPath, JSON.stringify(id, null, 2) + '\n');
+
+  // Update Namestone text record (re-set the subname with the new owner field)
+  let namestone = { skipped: true };
+  if (NAMESTONE_API_KEY) {
+    namestone = await registerSubname({
+      slug,
+      address: id.twinAddress,
+      role: id.role,
+      traits: id.traits,
+      voice: id.voice,
+      parentalAdviceWeight: id.parentalAdviceWeight,
+      owner: recovered,
+    });
+  }
+
+  return { ok: true, slug, owner: recovered, ens: id.ensName, namestone };
+}
+
 async function registerSubname({ slug, address, role, traits, voice, parentalAdviceWeight, owner }) {
   if (!NAMESTONE_API_KEY) {
     return { skipped: true, reason: 'NAMESTONE_API_KEY not set in .env' };
@@ -222,6 +269,14 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && req.url === '/api/mint') {
       const body = await readBody(req);
       const result = await safeMint(body);
+      res.writeHead(result.ok ? 200 : 400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    if (req.method === 'POST' && req.url === '/api/rebind') {
+      const body = await readBody(req);
+      const result = await rebindOwner(body);
       res.writeHead(result.ok ? 200 : 400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(result, null, 2));
       return;

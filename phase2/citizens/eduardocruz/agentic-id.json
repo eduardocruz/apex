@@ -20,5 +20,6 @@
   "mintCost": 1.5,
   "mintedAt": null,
   "_status": "local-only mock; Day 3 of build mints on chain",
-  "twinAddress": "0x7fad72E0F1f92fa281aAC39E0e64554d406556Ac"
+  "twinAddress": "0x7fad72E0F1f92fa281aAC39E0e64554d406556Ac",
+  "ownerVerified": false
 }
